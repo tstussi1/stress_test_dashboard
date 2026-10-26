@@ -1,0 +1,19 @@
+# Database and caches (rebuilt from the public Federal Reserve files)
+*.duckdb
+*.duckdb.pre_audit
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Raw downloads (fetch_sources.py recreates them)
+/data/
+
+# Web build output and local test artefacts
+web/node_modules/
+web/dist/
+web/test-results/
+web/qa-screenshots/
+
+# Local agent/IDE configuration
+.devin/

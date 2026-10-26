@@ -1,0 +1,61 @@
+{
+ "state_version": 2,
+ "order": {
+  "variables": [
+   "real_gdp_growth",
+   "nominal_gdp_growth",
+   "real_disposable_income_growth",
+   "nominal_disposable_income_growth",
+   "unemployment_rate",
+   "cpi_inflation_rate",
+   "treasury_3m_rate",
+   "treasury_5y_yield",
+   "treasury_10y_yield",
+   "bbb_corporate_yield",
+   "mortgage_rate",
+   "prime_rate",
+   "dow_jones_total_stock_market_index",
+   "house_price_index",
+   "cre_price_index",
+   "vix",
+   "euro_real_gdp_growth",
+   "euro_inflation",
+   "devasia_real_gdp_growth",
+   "devasia_inflation",
+   "japan_real_gdp_growth",
+   "japan_inflation",
+   "uk_real_gdp_growth",
+   "uk_inflation",
+   "euro_usd_exchange_rate",
+   "devasia_usd_exchange_rate",
+   "japan_usd_exchange_rate",
+   "uk_usd_exchange_rate"
+  ],
+  "scenarios": [
+   "baseline",
+   "adverse",
+   "severely_adverse",
+   "alternative_severe",
+   "exploratory",
+   "exploratory_a",
+   "exploratory_b"
+  ],
+  "vintages": [
+   "2013",
+   "2014",
+   "2015",
+   "2016",
+   "2017",
+   "2018",
+   "2019",
+   "2020_feb",
+   "2020_sep",
+   "2021",
+   "2022",
+   "2023",
+   "2024",
+   "2025",
+   "2026"
+  ]
+ }
+}

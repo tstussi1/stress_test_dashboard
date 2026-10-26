@@ -1,0 +1,1689 @@
+{
+ "schema_version": 1,
+ "state_version": 2,
+ "built_at": "2026-10-26T21:15:16+00:00",
+ "db_sha256": "58a4f9f7944dbcbab9f85cb0040a2f6504441dcffb9d37d0d266c96a7d7f86db",
+ "variables": [
+  {
+   "id": "real_gdp_growth",
+   "name": "Real GDP growth",
+   "scope": "domestic",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Output and income",
+   "definition": "Quarterly percent change in real gross domestic product (chained 2017 dollars), expressed at an annualized rate, Bureau of Economic Analysis (NIPA table 1.1.6, line 1)."
+  },
+  {
+   "id": "nominal_gdp_growth",
+   "name": "Nominal GDP growth",
+   "scope": "domestic",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Output and income",
+   "definition": "Quarterly percent change in gross domestic product (current dollars), expressed at an annualized rate, Bureau of Economic Analysis (NIPA table 1.1.5, line 1)."
+  },
+  {
+   "id": "real_disposable_income_growth",
+   "name": "Real disposable income growth",
+   "scope": "domestic",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Output and income",
+   "definition": "Quarterly percent change in real disposable personal income (current-dollar values divided by the price index for personal consumption expenditures), expressed at an annualized rate, Bureau of Economic Analysis (NIPA table 2.1, line 27, and NIPA table 1.1.4, line 2, respectively)."
+  },
+  {
+   "id": "nominal_disposable_income_growth",
+   "name": "Nominal disposable income growth",
+   "scope": "domestic",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Output and income",
+   "definition": "Quarterly percent change in disposable personal income (current dollars), expressed at an annualized rate, Bureau of Economic Analysis (NIPA table 2.1, line 27)."
+  },
+  {
+   "id": "unemployment_rate",
+   "name": "Unemployment rate",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Labor and prices",
+   "definition": "Quarterly average of seasonally adjusted monthly unemployment rates for the civilian, non-institutional population aged 16 years and older, Bureau of Labor Statistics (series LNS14000000)."
+  },
+  {
+   "id": "cpi_inflation_rate",
+   "name": "CPI inflation rate",
+   "scope": "domestic",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Labor and prices",
+   "definition": "Percent change in the quarterly average of seasonally adjusted monthly levels of the all-items CPI for all urban consumers (CPI-U), expressed at an annualized rate, Bureau of Labor Statistics (series CUSR0000SA0)."
+  },
+  {
+   "id": "treasury_3m_rate",
+   "name": "3-month Treasury rate",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Interest rates",
+   "definition": "Quarterly average of 3-month Treasury bill secondary market rate on a discount basis, H.15 Release, Selected Interest Rates, Federal Reserve Board (series RIFSGFSM03_N.B)."
+  },
+  {
+   "id": "treasury_5y_yield",
+   "name": "5-year Treasury yield",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Interest rates",
+   "definition": "Quarterly average of the yield on 5-year U.S. Treasury notes, constructed for the FRB/U.S. model by Federal Reserve staff based on the Svensson smoothed term structure model (see Lars E. O. Svensson, 1995, “Estimating Forward Interest Rates with the Extended Nelson–Siegel Method,” Quarterly Review, no. 3, Sveriges Riksbank, pp. 13–26)."
+  },
+  {
+   "id": "treasury_10y_yield",
+   "name": "10-year Treasury yield",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Interest rates",
+   "definition": "Quarterly average of the yield on 10-year U.S. Treasury notes, constructed for the FRB/U.S. model by Federal Reserve staff based on the Svensson smoothed term structure model (see Svensson, “Estimating Forward Interest Rates”)."
+  },
+  {
+   "id": "bbb_corporate_yield",
+   "name": "BBB corporate yield",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Interest rates",
+   "definition": "Quarterly average of ICE BofAML U.S. Corporate 7-10 Year Yield-toMaturity Index, ICE Data Indices, LLC, used with permission (C4A4 series)."
+  },
+  {
+   "id": "mortgage_rate",
+   "name": "Mortgage rate",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Interest rates",
+   "definition": "Quarterly average of weekly series for the interest rate of a conventional, conforming, 30-year fixed-rate mortgage, obtained from the Primary Mortgage Market Survey of the Federal Home Loan Mortgage Corporation."
+  },
+  {
+   "id": "prime_rate",
+   "name": "Prime rate",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "Interest rates",
+   "definition": "Quarterly average of monthly series, H.15 Release (Selected Interest Rates), Federal Reserve Board (series RIFSPBLP_N.M)."
+  },
+  {
+   "id": "dow_jones_total_stock_market_index",
+   "name": "Dow Jones Total Stock Market Index",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "index",
+   "unit_label": "index",
+   "theme": "Asset prices",
+   "definition": "End-of-quarter value via Bloomberg Finance L.P."
+  },
+  {
+   "id": "house_price_index",
+   "name": "House Price Index",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "index",
+   "unit_label": "index",
+   "theme": "Asset prices",
+   "definition": "Price Index for Owner-Occupied Real Estate, Z.1 Release (Financial Accounts of the United States), Federal Reserve Board (series FL075035243.Q divided by 1000)."
+  },
+  {
+   "id": "cre_price_index",
+   "name": "Commercial Real Estate Price Index",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "index",
+   "unit_label": "index",
+   "theme": "Asset prices",
+   "definition": "Commercial Real Estate Price Index, Z.1 Release (Financial Accounts of the United States), Federal Reserve Board (series FL075035503.Q divided by 1000)."
+  },
+  {
+   "id": "vix",
+   "name": "Market Volatility Index (VIX)",
+   "scope": "domestic",
+   "measure": "level",
+   "unit": "index",
+   "unit_label": "index",
+   "theme": "Asset prices",
+   "definition": "VIX converted to quarterly frequency using the maximum closeof-day value in any quarter, Chicago Board Options Exchange via Bloomberg Finance L.P."
+  },
+  {
+   "id": "euro_real_gdp_growth",
+   "name": "Euro area real GDP growth",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Quarterly percent change in real gross domestic product at an annualized rate, staff calculations based on Statistical Office of the European Communities via Haver, extended back using ECB Area Wide Model dataset (ECB Working Paper series no. 42)."
+  },
+  {
+   "id": "euro_inflation",
+   "name": "Euro area inflation",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Percent change in the quarterly average of the harmonized index of consumer prices at an annualized rate, staff calculations based on Statistical Office of the European Communities via Haver."
+  },
+  {
+   "id": "devasia_real_gdp_growth",
+   "name": "Developing Asia real GDP growth",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Quarterly percent change in real gross domestic product at an annualized rate, staff calculations based on data from Bank of Korea via Haver; National Bureau of Statistics of China via Haver; Indian Central Statistics Office via Haver; Census and Statistics"
+  },
+  {
+   "id": "devasia_inflation",
+   "name": "Developing Asia inflation",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Percent change in the quarterly average of the consumer price index, or local equivalent, at an annualized rate, staff calculations based on data from National Bureau of Statistics of China via Haver; Indian Ministry of Statistics and Programme Implementation via Haver; Labour Bureau of India via Haver; Statistics Korea (KOSTAT) via Haver; Census and Statistics Department of Hong Kong via Haver; and Taiwan Directorate-General of Budget, Accounting and Statistics via Haver."
+  },
+  {
+   "id": "japan_real_gdp_growth",
+   "name": "Japan real GDP growth",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Quarterly percent change in real gross domestic product at an annualized rate from 1980 to present and percent change in gross domestic expenditure at an annualized rate prior to 1980, Cabinet Office of Japan via Haver."
+  },
+  {
+   "id": "japan_inflation",
+   "name": "Japan inflation",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Percent change in the quarterly average of the consumer price index at an annualized rate, based on data from the Ministry of Internal Affairs and Communications via Haver."
+  },
+  {
+   "id": "uk_real_gdp_growth",
+   "name": "U.K. real GDP growth",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Quarterly percent change in real gross domestic product at an annualized rate, U.K. Office for National Statistics via Haver."
+  },
+  {
+   "id": "uk_inflation",
+   "name": "U.K. inflation",
+   "scope": "international",
+   "measure": "growth",
+   "unit": "percent",
+   "unit_label": "percent",
+   "theme": "International activity and prices",
+   "definition": "Percent change in the quarterly average of the consumer price index at an annualized rate from 1988 to present and percent change in the quarterly average of the retail prices index prior to 1988, staff calculations based on data from the U.K. Office for National Statistics via Haver."
+  },
+  {
+   "id": "euro_usd_exchange_rate",
+   "name": "Euro area bilateral dollar exchange rate (USD/euro)",
+   "scope": "international",
+   "measure": "level",
+   "unit": "currency_units",
+   "unit_label": "exchange rate",
+   "theme": "Exchange rates",
+   "definition": "End-of-quarter exchange rates, H.10 Release (Foreign Exchange Rates), Federal Reserve Board."
+  },
+  {
+   "id": "devasia_usd_exchange_rate",
+   "name": "Developing Asia bilateral dollar exchange rate (F/USD, index)",
+   "scope": "international",
+   "measure": "level",
+   "unit": "index",
+   "unit_label": "index",
+   "theme": "Exchange rates",
+   "definition": "End-of-quarter exchange rates, H.10 Release (Foreign Exchange Rates), Federal Reserve Board."
+  },
+  {
+   "id": "japan_usd_exchange_rate",
+   "name": "Japan bilateral dollar exchange rate (yen/USD)",
+   "scope": "international",
+   "measure": "level",
+   "unit": "currency_units",
+   "unit_label": "exchange rate",
+   "theme": "Exchange rates",
+   "definition": "End-of-quarter exchange rates, H.10 Release (Foreign Exchange Rates), Federal Reserve Board."
+  },
+  {
+   "id": "uk_usd_exchange_rate",
+   "name": "U.K. bilateral dollar exchange rate (USD/pound)",
+   "scope": "international",
+   "measure": "level",
+   "unit": "currency_units",
+   "unit_label": "exchange rate",
+   "theme": "Exchange rates",
+   "definition": "End-of-quarter exchange rates, H.10 Release (Foreign Exchange Rates), Federal Reserve Board."
+  }
+ ],
+ "vintages": [
+  {
+   "id": "2013",
+   "cycle_year": 2013,
+   "label": "2013",
+   "horizon_start": "2012Q4",
+   "horizon_end": "2015Q4",
+   "jump_off": "2012Q3",
+   "origin": "fed",
+   "n_variables": 26,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "adverse",
+    "severely_adverse"
+   ],
+   "estimate_statement": null,
+   "estimate_statement_note": "The Federal Reserve's files for this vintage contain no statement marking estimated values; none are flagged."
+  },
+  {
+   "id": "2014",
+   "cycle_year": 2014,
+   "label": "2014",
+   "horizon_start": "2013Q4",
+   "horizon_end": "2016Q4",
+   "jump_off": "2013Q3",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "adverse",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2013Q3",
+    "wording": "projected",
+    "sentence": "The 2013:Q3 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2015",
+   "cycle_year": 2015,
+   "label": "2015",
+   "horizon_start": "2014Q4",
+   "horizon_end": "2017Q4",
+   "jump_off": "2014Q3",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "adverse",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2014Q3",
+    "wording": "projected",
+    "sentence": "The 2014:Q3 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2016",
+   "cycle_year": 2016,
+   "label": "2016",
+   "horizon_start": "2016Q1",
+   "horizon_end": "2019Q1",
+   "jump_off": "2015Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "adverse",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2015Q4",
+    "wording": "projected",
+    "sentence": "The 2015:Q4 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2017",
+   "cycle_year": 2017,
+   "label": "2017",
+   "horizon_start": "2017Q1",
+   "horizon_end": "2020Q1",
+   "jump_off": "2016Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "adverse",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2016Q4",
+    "wording": "projected",
+    "sentence": "The 2016:Q4 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2018",
+   "cycle_year": 2018,
+   "label": "2018",
+   "horizon_start": "2018Q1",
+   "horizon_end": "2021Q1",
+   "jump_off": "2017Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "adverse",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2017Q4",
+    "wording": "projected",
+    "sentence": "The 2017:Q4 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2019",
+   "cycle_year": 2019,
+   "label": "2019",
+   "horizon_start": "2019Q1",
+   "horizon_end": "2022Q1",
+   "jump_off": "2018Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "adverse",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2018Q4",
+    "wording": "projected",
+    "sentence": "The 2018:Q4 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2020_feb",
+   "cycle_year": 2020,
+   "label": "2020 (Feb)",
+   "horizon_start": "2020Q1",
+   "horizon_end": "2023Q1",
+   "jump_off": "2019Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2019Q4",
+    "wording": "projected",
+    "sentence": "The 2019:Q4 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2020_sep",
+   "cycle_year": 2020,
+   "label": "2020 (Sep)",
+   "horizon_start": "2020Q3",
+   "horizon_end": "2023Q3",
+   "jump_off": "2020Q2",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse",
+    "alternative_severe"
+   ],
+   "estimate_statement": {
+    "quarter": "2020Q2",
+    "wording": "projected",
+    "sentence": "The 2020:Q2 values of variables marked with an asterisk (*) are projected."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2021",
+   "cycle_year": 2021,
+   "label": "2021",
+   "horizon_start": "2021Q1",
+   "horizon_end": "2024Q1",
+   "jump_off": "2020Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2020Q4",
+    "wording": "estimates",
+    "sentence": "The 2020:Q4 values of variables marked with an asterisk (*) are estimates."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2022",
+   "cycle_year": 2022,
+   "label": "2022",
+   "horizon_start": "2022Q1",
+   "horizon_end": "2025Q1",
+   "jump_off": "2021Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2021Q4",
+    "wording": "estimates",
+    "sentence": "The 2021:Q4 values of variables marked with an asterisk (*) are estimates."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2023",
+   "cycle_year": 2023,
+   "label": "2023",
+   "horizon_start": "2023Q1",
+   "horizon_end": "2026Q1",
+   "jump_off": "2022Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2022Q4",
+    "wording": "estimates",
+    "sentence": "The 2022:Q4 values of variables marked with an asterisk (*) are estimates."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2024",
+   "cycle_year": 2024,
+   "label": "2024",
+   "horizon_start": "2024Q1",
+   "horizon_end": "2027Q1",
+   "jump_off": "2023Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse",
+    "exploratory_a",
+    "exploratory_b"
+   ],
+   "estimate_statement": {
+    "quarter": "2023Q4",
+    "wording": "estimates",
+    "sentence": "The 2023:Q4 values of variables marked with an asterisk (*) are estimates."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2025",
+   "cycle_year": 2025,
+   "label": "2025",
+   "horizon_start": "2025Q1",
+   "horizon_end": "2028Q1",
+   "jump_off": "2024Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse",
+    "exploratory"
+   ],
+   "estimate_statement": {
+    "quarter": "2024Q4",
+    "wording": "estimates",
+    "sentence": "The 2024:Q4 values of variables marked with an asterisk (*) are estimates."
+   },
+   "estimate_statement_note": null
+  },
+  {
+   "id": "2026",
+   "cycle_year": 2026,
+   "label": "2026",
+   "horizon_start": "2026Q1",
+   "horizon_end": "2029Q1",
+   "jump_off": "2025Q4",
+   "origin": "fed",
+   "n_variables": 28,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_5y_yield",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "prime_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse"
+   ],
+   "estimate_statement": {
+    "quarter": "2025Q4",
+    "wording": "estimates",
+    "sentence": "The 2025:Q4 values of variables marked with an asterisk (*) are estimates."
+   },
+   "estimate_statement_note": null
+  }
+ ],
+ "scenarios": [
+  {
+   "name": "baseline",
+   "label": "Baseline",
+   "family": "baseline",
+   "order": 1
+  },
+  {
+   "name": "adverse",
+   "label": "Adverse",
+   "family": "adverse",
+   "order": 2
+  },
+  {
+   "name": "severely_adverse",
+   "label": "Severely adverse",
+   "family": "severely_adverse",
+   "order": 3
+  },
+  {
+   "name": "alternative_severe",
+   "label": "Alternative severe",
+   "family": "other",
+   "order": 4
+  },
+  {
+   "name": "exploratory",
+   "label": "Exploratory",
+   "family": "other",
+   "order": 5
+  },
+  {
+   "name": "exploratory_a",
+   "label": "Exploratory A",
+   "family": "other",
+   "order": 6
+  },
+  {
+   "name": "exploratory_b",
+   "label": "Exploratory B",
+   "family": "other",
+   "order": 7
+  },
+  {
+   "name": "realized",
+   "label": "Historical data, latest Federal Reserve publication",
+   "family": "realized",
+   "order": 99
+  }
+ ],
+ "sources": [
+  {
+   "vintage": "2013",
+   "file": "historical.xlsx",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20121115a3.xlsx",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2013",
+   "file": "scenarios.xlsx",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20121115a2.xlsx",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2014",
+   "file": "scenarios_narrative.pdf",
+   "url": "https://www.federalreserve.gov/bankinforeg/bcreg20131101a1.pdf",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2015",
+   "file": "scenarios_variables.htm",
+   "url": "https://www.federalreserve.gov/bankinforeg/stress-tests/2015-supervisory-scenarios-for-annual-stress-tests-scenarios-variables-considered-in-scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2016",
+   "file": "macro_scenario_tables.zip",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/2016-macro-scenario-tables.zip",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2017",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2017-supervisory-scenarios-for-annual-stress-tests-introduction.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2018",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2018-february-supervisory-scenarios-for-annual-stress-tests.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2019",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2019-february-supervisory-scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2020_feb",
+   "file": "scenarios_feb.htm",
+   "url": "https://www.federalreserve.gov/publications/2020-february-supervisory-scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2020_sep",
+   "file": "scenarios_sep.htm",
+   "url": "https://www.federalreserve.gov/publications/2020-september-supervisory-scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2021",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/stress-test-scenarios-february-2021.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2022",
+   "file": "baseline_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2022-table_2a_supervisory_baseline_domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2022",
+   "file": "baseline_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2022-table_2b_supervisory_baseline_international.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2022",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2022-Stress-Test-Scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2022",
+   "file": "severely_adverse_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2022-table_3a_supervisory_severely_adverse_domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2022",
+   "file": "severely_adverse_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2022-table_3b_supervisory_severely_adverse_international.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2023",
+   "file": "baseline_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2023-Table_2A_Supervisory_Baseline_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2023",
+   "file": "baseline_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2023-Table_2B_Supervisory_Baseline_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2023",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2023-Stress-Test-Scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2023",
+   "file": "severely_adverse_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2023-Table_3A_Supervisory_Severely_Adverse_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2023",
+   "file": "severely_adverse_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2023-Table_3B_Supervisory_Severely_Adverse_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "baseline_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2024-Table_3A_Supervisory_Baseline_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "baseline_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2024-Table_3B_Supervisory_Baseline_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "exploratory_a_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2024-Table_Exploratory_Macro_Conditions_A_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "exploratory_b_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2024-Table_Exploratory_Macro_Conditions_B_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "exploratory_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2024-Table_Exploratory_Macro_Conditions_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2024-stress-test-scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "severely_adverse_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2024-Table_4A_Supervisory_Severely_Adverse_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2024",
+   "file": "severely_adverse_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2024-Table_4B_Supervisory_Severely_Adverse_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2025",
+   "file": "baseline_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2025-Table_2A_Supervisory_Baseline_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2025",
+   "file": "baseline_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2025-Table_2B_Supervisory_Baseline_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2025",
+   "file": "exploratory_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2025-Exploratory_Macro_Conditions_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2025",
+   "file": "exploratory_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2025-Exploratory_Macro_Conditions_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2025",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2025-stress-test-scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2025",
+   "file": "severely_adverse_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2025-Table_3A_Supervisory_Severely_Adverse_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2025",
+   "file": "severely_adverse_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2025-Table_3B_Supervisory_Severely_Adverse_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2026",
+   "file": "baseline_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2026_Final_Supervisory_Baseline_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2026",
+   "file": "baseline_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2026_Final_Supervisory_Baseline_International.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2026",
+   "file": "scenarios.htm",
+   "url": "https://www.federalreserve.gov/publications/2026-stress-test-scenarios.htm",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2026",
+   "file": "severely_adverse_domestic.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2026_Final_Supervisory_Severely_Adverse_Domestic.csv",
+   "retrieved": "2026-10-22"
+  },
+  {
+   "vintage": "2026",
+   "file": "severely_adverse_international.csv",
+   "url": "https://www.federalreserve.gov/supervisionreg/files/2026_Final_Supervisory_Severely_Adverse_International.csv",
+   "retrieved": "2026-10-22"
+  }
+ ],
+ "reports": [
+  {
+   "vintage": "2013",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20121115a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2014",
+   "url": "https://www.federalreserve.gov/bankinforeg/bcreg20131101a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2015",
+   "url": "https://www.federalreserve.gov/newsevents/press/bcreg/bcreg20141023a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2016",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20160128a2.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2017",
+   "url": "https://www.federalreserve.gov/publications/files/bcreg20170203a5.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2018",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20180201a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2019",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20190213a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2020_feb",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20200206a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2020_sep",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20200917a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2021",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20210212a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2022",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20220210a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2023",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20230209a1.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2024",
+   "url": "https://www.federalreserve.gov/publications/files/2024-stress-test-scenarios-20240215.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2025",
+   "url": "https://www.federalreserve.gov/publications/files/2025-stress-test-scenarios-20250205.pdf",
+   "retrieved": "2026-10-23"
+  },
+  {
+   "vintage": "2026",
+   "url": "https://www.federalreserve.gov/publications/files/2026-final-supervisory-stress-test-scenarios-20260204.pdf",
+   "retrieved": "2026-10-23"
+  }
+ ],
+ "methodology": {
+  "rounding_bound_percent": 0.171
+ },
+ "gaps": [
+  {
+   "id": "scap_2009",
+   "title": "2009 (SCAP)",
+   "reason": "The Federal Reserve published only chart figures and summary statistics for this exercise, never a data table. Not digitized from images."
+  },
+  {
+   "id": "ccar_2011",
+   "title": "2011",
+   "reason": "Chart figures and summary statistics only; no published data table. Not digitized from images."
+  },
+  {
+   "id": "ccar_2012",
+   "title": "2012",
+   "reason": "Chart figures and summary statistics only; no published data table. Not digitized from images."
+  },
+  {
+   "id": "covid_sensitivity_2020",
+   "title": "June 2020 COVID sensitivity analysis (V-, U- and W-shaped paths)",
+   "reason": "The Federal Reserve's accessible page for the sensitivity analysis contains bank-outcome charts only, no macro scenario table. The macro paths are not available as data and are not digitized."
+  }
+ ],
+ "data_notes": [
+  {
+   "id": "vix_2013",
+   "variables": [
+    "vix"
+   ],
+   "vintages": [
+    "2013"
+   ],
+   "title": "VIX, 2008Q2, 2013 vintage",
+   "text": "The 2013 historical workbook gives 31.01 for the 2008Q2 VIX; every later vintage gives 24.1. The value is shown as the Federal Reserve published it in each vintage."
+  },
+  {
+   "id": "house_price_2016",
+   "variables": [
+    "house_price_index"
+   ],
+   "vintages": [
+    "2016"
+   ],
+   "title": "House price index, 2015Q1-Q3, 2016 vintage",
+   "text": "The 2016 vintage reports 177.3, 179.4 and 181.7 for 2015Q1-Q3; all other vintages report about 168.5, 170.5 and 173. Shown as published."
+  },
+  {
+   "id": "fx_2014_precision",
+   "variables": [
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "vintages": [
+    "2014"
+   ],
+   "title": "Exchange rates, 2014 vintage",
+   "text": "The 2014 report prints exchange rates to one decimal place, so these series are coarser than in other vintages."
+  },
+  {
+   "id": "house_price_series",
+   "variables": [
+    "house_price_index"
+   ],
+   "vintages": [
+    "2013",
+    "2014",
+    "2015",
+    "2016",
+    "2017",
+    "2018",
+    "2019",
+    "2020_feb",
+    "2020_sep",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "title": "House price index definition",
+   "text": "Through the 2017 report the series is a CoreLogic index level seasonally adjusted by Federal Reserve staff; from 2018 the report describes the Z.1 price index for owner-occupied real estate. Levels differ between these vintages."
+  },
+  {
+   "id": "bbb_series",
+   "variables": [
+    "bbb_corporate_yield"
+   ],
+   "vintages": [
+    "2013",
+    "2014",
+    "2015",
+    "2016",
+    "2017",
+    "2018",
+    "2019",
+    "2020_feb",
+    "2020_sep",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "title": "BBB corporate yield definition",
+   "text": "The source changes: a staff-constructed 10-year BBB yield through 2017, a Merrill Lynch 10-year BBB yield (Z.1) in 2018-2019, and the ICE BofAML 7-10 year corporate index yield from the February 2020 report."
+  },
+  {
+   "id": "dow_float_cap",
+   "variables": [
+    "dow_jones_total_stock_market_index"
+   ],
+   "vintages": [
+    "2014",
+    "2015",
+    "2016",
+    "2017",
+    "2018",
+    "2019",
+    "2020_feb",
+    "2020_sep",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ],
+   "title": "Dow Jones Total Stock Market index",
+   "text": "The 2014 report notes that the earlier Dow Jones index was discontinued in November 2012 in favour of the Float Cap index; the reports' definitions name the Float Cap index."
+  },
+  {
+   "id": "unemployment_cpi_2025q4",
+   "variables": [
+    "unemployment_rate",
+    "cpi_inflation_rate"
+   ],
+   "vintages": [
+    "2026"
+   ],
+   "title": "2025Q4 unemployment rate and CPI inflation, 2026 vintage",
+   "text": "The 2026 report states that the 2025Q4 values reflect an average of the November and December 2025 readings because the October 2025 data were not published."
+  }
+ ],
+ "defaults": {
+  "variable": "real_gdp_growth",
+  "scenarios": [
+   "baseline",
+   "severely_adverse"
+  ],
+  "vintages": {
+   "latest": 1
+  },
+  "view": "published",
+  "basis": "growth_gap",
+  "axis": "calendar",
+  "history": "latest",
+  "range": "recent",
+  "band": false
+ },
+ "quick_views": [
+  {
+   "id": "levels_history",
+   "label": "Levels and history",
+   "description": "The Federal Reserve's own numbers for the latest publication, with the history it published.",
+   "state": {
+    "scenarios": [
+     "baseline",
+     "severely_adverse"
+    ],
+    "vintages": {
+     "latest": 1
+    },
+    "view": "published",
+    "axis": "calendar",
+    "history": "latest",
+    "range": "recent",
+    "band": false
+   }
+  },
+  {
+   "id": "compare_years",
+   "label": "Compare years",
+   "description": "Scenario minus the same year's baseline for the latest six publications, aligned at the quarter each scenario starts, with the shaded minimum-to-maximum band behind the lines.",
+   "state": {
+    "scenarios": [
+     "adverse",
+     "severely_adverse"
+    ],
+    "vintages": {
+     "latest": 6
+    },
+    "view": "deviation",
+    "axis": "horizon",
+    "band": true
+   }
+  }
+ ],
+ "limits": {
+  "calendar_context_quarters": 40
+ },
+ "labels": {
+  "growth_unit": "percent, annualized",
+  "level_index": "index, 100 = quarter before the scenario starts",
+  "level_gap": "percent difference in level"
+ },
+ "state_order": {
+  "variables": [
+   "real_gdp_growth",
+   "nominal_gdp_growth",
+   "real_disposable_income_growth",
+   "nominal_disposable_income_growth",
+   "unemployment_rate",
+   "cpi_inflation_rate",
+   "treasury_3m_rate",
+   "treasury_5y_yield",
+   "treasury_10y_yield",
+   "bbb_corporate_yield",
+   "mortgage_rate",
+   "prime_rate",
+   "dow_jones_total_stock_market_index",
+   "house_price_index",
+   "cre_price_index",
+   "vix",
+   "euro_real_gdp_growth",
+   "euro_inflation",
+   "devasia_real_gdp_growth",
+   "devasia_inflation",
+   "japan_real_gdp_growth",
+   "japan_inflation",
+   "uk_real_gdp_growth",
+   "uk_inflation",
+   "euro_usd_exchange_rate",
+   "devasia_usd_exchange_rate",
+   "japan_usd_exchange_rate",
+   "uk_usd_exchange_rate"
+  ],
+  "scenarios": [
+   "baseline",
+   "adverse",
+   "severely_adverse",
+   "alternative_severe",
+   "exploratory",
+   "exploratory_a",
+   "exploratory_b"
+  ],
+  "vintages": [
+   "2013",
+   "2014",
+   "2015",
+   "2016",
+   "2017",
+   "2018",
+   "2019",
+   "2020_feb",
+   "2020_sep",
+   "2021",
+   "2022",
+   "2023",
+   "2024",
+   "2025",
+   "2026"
+  ]
+ }
+}

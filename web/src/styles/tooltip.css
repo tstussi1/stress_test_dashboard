@@ -1,0 +1,35 @@
+/* ECharts tooltip content (rendered by lib/chart.ts) */
+.tt {
+  min-width: 190px;
+  max-width: 280px;
+  font-family: var(--font-sans);
+  line-height: 1.35;
+}
+.tt-title {
+  font-weight: 600;
+  color: var(--navy);
+}
+.tt-sub {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.tt-main b {
+  font-size: 17px;
+}
+.tt-main span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.tt-extra {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--rule);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.tt-flag {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--warn-ink);
+}

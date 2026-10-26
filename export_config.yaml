@@ -1,0 +1,166 @@
+# Configuration for export_web_data.py: everything the dashboard shows that is not a number
+# from the database. Variable ids, scenario names and vintages must exist in the database;
+# the exporter stops with the missing key if any database variable or scenario is not listed
+# here. Labels and groupings live only here and reach the page through catalog.json.
+
+state_version: 2   # bump only when the share-code order (state_order.json) is deliberately reset
+
+scenarios:
+  baseline:           {label: Baseline,                   family: baseline,         order: 1}
+  adverse:            {label: Adverse,                    family: adverse,          order: 2}
+  severely_adverse:   {label: Severely adverse,           family: severely_adverse, order: 3}
+  alternative_severe: {label: Alternative severe,         family: other,            order: 4}
+  exploratory:        {label: Exploratory,                family: other,            order: 5}
+  exploratory_a:      {label: Exploratory A,              family: other,            order: 6}
+  exploratory_b:      {label: Exploratory B,              family: other,            order: 7}
+
+# Display order of the groups in the variable picker, and each variable's group.
+theme_order:
+  - Output and income
+  - Labor and prices
+  - Interest rates
+  - Asset prices
+  - International activity and prices
+  - Exchange rates
+
+themes:
+  real_gdp_growth: Output and income
+  nominal_gdp_growth: Output and income
+  real_disposable_income_growth: Output and income
+  nominal_disposable_income_growth: Output and income
+  unemployment_rate: Labor and prices
+  cpi_inflation_rate: Labor and prices
+  treasury_3m_rate: Interest rates
+  treasury_5y_yield: Interest rates
+  treasury_10y_yield: Interest rates
+  bbb_corporate_yield: Interest rates
+  mortgage_rate: Interest rates
+  prime_rate: Interest rates
+  dow_jones_total_stock_market_index: Asset prices
+  house_price_index: Asset prices
+  cre_price_index: Asset prices
+  vix: Asset prices
+  euro_real_gdp_growth: International activity and prices
+  euro_inflation: International activity and prices
+  devasia_real_gdp_growth: International activity and prices
+  devasia_inflation: International activity and prices
+  japan_real_gdp_growth: International activity and prices
+  japan_inflation: International activity and prices
+  uk_real_gdp_growth: International activity and prices
+  uk_inflation: International activity and prices
+  euro_usd_exchange_rate: Exchange rates
+  devasia_usd_exchange_rate: Exchange rates
+  japan_usd_exchange_rate: Exchange rates
+  uk_usd_exchange_rate: Exchange rates
+
+# Axis/unit text for the database's `variables.unit`, and for the calculated views.
+unit_labels:
+  percent: "percent"
+  index: "index"
+  currency_units: "exchange rate"
+growth_unit_label: "percent, annualized"
+level_index_label: "index, 100 = quarter before the scenario starts"
+level_gap_label: "percent difference in level"
+
+# Extra statistics (besides the central path stored as stat='value') that become a band.
+band_stats: {lo: p16, hi: p84, label: "68% band"}
+
+# Worst-case effect of the Fed rounding growth rates to 0.1 pp on a 13-quarter cumulated level,
+# computed by audit_database.py (audit/derived_audit.md, 'rounding bound'); shown on the Methodology tab.
+methodology:
+  rounding_bound_percent: 0.171
+
+gaps:
+  - id: scap_2009
+    title: "2009 (SCAP)"
+    reason: "The Federal Reserve published only chart figures and summary statistics for this exercise, never a data table. Not digitized from images."
+  - id: ccar_2011
+    title: "2011"
+    reason: "Chart figures and summary statistics only; no published data table. Not digitized from images."
+  - id: ccar_2012
+    title: "2012"
+    reason: "Chart figures and summary statistics only; no published data table. Not digitized from images."
+  - id: covid_sensitivity_2020
+    title: "June 2020 COVID sensitivity analysis (V-, U- and W-shaped paths)"
+    reason: "The Federal Reserve's accessible page for the sensitivity analysis contains bank-outcome charts only, no macro scenario table. The macro paths are not available as data and are not digitized."
+
+# Facts about the Federal Reserve's own numbers that a reader should know. Each is kept exactly
+# as published in the database; see stress_test_dashboard/audit/ for the evidence.
+data_notes:
+  - id: vix_2013
+    variables: [vix]
+    vintages: ["2013"]
+    title: "VIX, 2008Q2, 2013 vintage"
+    text: "The 2013 historical workbook gives 31.01 for the 2008Q2 VIX; every later vintage gives 24.1. The value is shown as the Federal Reserve published it in each vintage."
+  - id: house_price_2016
+    variables: [house_price_index]
+    vintages: ["2016"]
+    title: "House price index, 2015Q1-Q3, 2016 vintage"
+    text: "The 2016 vintage reports 177.3, 179.4 and 181.7 for 2015Q1-Q3; all other vintages report about 168.5, 170.5 and 173. Shown as published."
+  - id: fx_2014_precision
+    variables: [euro_usd_exchange_rate, devasia_usd_exchange_rate, japan_usd_exchange_rate, uk_usd_exchange_rate]
+    vintages: ["2014"]
+    title: "Exchange rates, 2014 vintage"
+    text: "The 2014 report prints exchange rates to one decimal place, so these series are coarser than in other vintages."
+  - id: house_price_series
+    variables: [house_price_index]
+    vintages: ["2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020_feb", "2020_sep", "2021", "2022", "2023", "2024", "2025", "2026"]
+    title: "House price index definition"
+    text: "Through the 2017 report the series is a CoreLogic index level seasonally adjusted by Federal Reserve staff; from 2018 the report describes the Z.1 price index for owner-occupied real estate. Levels differ between these vintages."
+  - id: bbb_series
+    variables: [bbb_corporate_yield]
+    vintages: ["2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020_feb", "2020_sep", "2021", "2022", "2023", "2024", "2025", "2026"]
+    title: "BBB corporate yield definition"
+    text: "The source changes: a staff-constructed 10-year BBB yield through 2017, a Merrill Lynch 10-year BBB yield (Z.1) in 2018-2019, and the ICE BofAML 7-10 year corporate index yield from the February 2020 report."
+  - id: dow_float_cap
+    variables: [dow_jones_total_stock_market_index]
+    vintages: ["2014", "2015", "2016", "2017", "2018", "2019", "2020_feb", "2020_sep", "2021", "2022", "2023", "2024", "2025", "2026"]
+    title: "Dow Jones Total Stock Market index"
+    text: "The 2014 report notes that the earlier Dow Jones index was discontinued in November 2012 in favour of the Float Cap index; the reports' definitions name the Float Cap index."
+  - id: unemployment_cpi_2025q4
+    variables: [unemployment_rate, cpi_inflation_rate]
+    vintages: ["2026"]
+    title: "2025Q4 unemployment rate and CPI inflation, 2026 vintage"
+    text: "The 2026 report states that the 2025Q4 values reflect an average of the November and December 2025 readings because the October 2025 data were not published."
+
+# What the page opens on, and the one-click "Quick views". A state spec may name:
+#   variable, scenarios, vintages ('all' | {latest: N} | [ids]), view (published | level | deviation),
+#   basis (growth_gap | level_gap), axis (horizon | calendar), history (off | latest | realtime),
+#   range (recent | full), band (true | false: shaded minimum to maximum of the lines drawn).
+# `defaults` must give every key; a quick view gives only what it changes. Ids are validated
+# against the database at export time.
+defaults:
+  variable: real_gdp_growth
+  scenarios: [baseline, severely_adverse]
+  vintages: {latest: 1}
+  view: published
+  basis: growth_gap
+  axis: calendar
+  history: latest
+  range: recent
+  band: false
+
+quick_views:
+  - id: levels_history
+    label: "Levels and history"
+    description: "The Federal Reserve's own numbers for the latest publication, with the history it published."
+    state:
+      scenarios: [baseline, severely_adverse]
+      vintages: {latest: 1}
+      view: published
+      axis: calendar
+      history: latest
+      range: recent
+      band: false
+  - id: compare_years
+    label: "Compare years"
+    description: "Scenario minus the same year's baseline for the latest six publications, aligned at the quarter each scenario starts, with the shaded minimum-to-maximum band behind the lines."
+    state:
+      scenarios: [adverse, severely_adverse]
+      vintages: {latest: 6}
+      view: deviation
+      axis: horizon
+      band: true
+
+limits:
+  calendar_context_quarters: 40   # "Recent" history range: quarters of history before the earliest selected scenario starts

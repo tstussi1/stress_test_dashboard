@@ -1,0 +1,51 @@
+{
+  "name": "stress-test-scenario-explorer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Static dashboard for the Federal Reserve supervisory stress-test scenarios",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@fontsource-variable/source-sans-3": "5.3.1",
+    "@fontsource-variable/source-serif-4": "5.3.1",
+    "echarts": "6.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tsconfig/svelte": "5.0.8",
+    "@types/node": "22.20.5",
+    "eslint": "10.12.0",
+    "eslint-plugin-svelte": "3.23.1",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "prettier-plugin-svelte": "4.1.1",
+    "svelte": "5.57.2",
+    "svelte-check": "4.7.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run check:fresh && vite build && npm run check:budget",
+    "preview": "vite preview",
+    "check:fresh": "node scripts/check-data-fresh.mjs",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "e2e": "npm run build && playwright test",
+    "verify": "npm run typecheck && npm run lint && npm run test",
+    "check:budget": "node scripts/check-budgets.mjs"
+  },
+  "budgets": {
+    "js_gzip_kb": 500,
+    "css_gzip_kb": 50,
+    "data_gzip_kb": 400
+  }
+}

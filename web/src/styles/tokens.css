@@ -1,0 +1,20 @@
+/* Design tokens. An institutional, publication-style look: white page, hairline rules, serif for
+   titles and figure headings, sans for controls and numbers, one navy for emphasis. */
+:root {
+  --ink: #1a1f2b;
+  --muted: #5b6573;
+  --rule: #d9dee5;
+  --rule-strong: #b9c1cc;
+  --panel: #f4f5f7;
+  --paper: #ffffff;
+  --navy: #13294b;
+  --navy-soft: #2c4a7a;
+  --focus: #1d5fd1;
+  --warn-bg: #fff6e0;
+  --warn-ink: #6b4a00;
+  --font-serif: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius: 4px;
+  --rail-width: 330px;
+  --page-width: 1560px;
+}
