@@ -12,7 +12,9 @@ Required inputs:
     the first export, appended to when the database gains a vintage/scenario/variable)
 
 Outputs, in `paths.WEB_DATA_DIR`:
-  - `catalog.json`  variables, vintages, scenarios, sources, gaps, data notes, defaults, build info
+  - `catalog.json`  variables, vintages (with `exercise`, `has_baseline`, derived series), scenarios
+                    (with the Fed's own `published_name` where it differs), sources, gaps, data
+                    notes, defaults, build info
   - `paths.json`    one series per (vintage, scenario, variable): published value, cumulated
                     level, gap to baseline, % level gap; plus a `realized` series per vintage
   - `actuals.json`  each vintage's own as-published Historical data
@@ -30,7 +32,12 @@ Key assumptions:
     the supplying vintage are listed in `estimated`. The Fed's own scenario and history of
     a vintage are never mixed with another vintage's.
   - Quarters are 'YYYYQn' strings; arrays are aligned to consecutive quarters from `start`.
-    The horizon index is the array position + 1. Baseline series have `dev = null`.
+    The horizon index is the array position + 1. Baseline series have `dev = null`. A vintage
+    with no baseline scenario at all (CCAR 2011) has `dev = dev_level = null` everywhere and
+    `has_baseline = false` in the catalog; a missing baseline value in a vintage that has a
+    baseline still raises.
+  - Share-code order is append-only: the exported order is the committed order followed by ids
+    that are new (chronological/display order among themselves); an id may never disappear.
   - A statistic other than 'value' (`band_stats` in the config) becomes a `band`; the central
     path is always stored as stat 'value'.
 """
@@ -137,13 +144,18 @@ def validate_state_spec(spec: dict, name: str, var_ids: set[str], scenarios: set
 
 
 def check_state_order(cfg: dict, current: dict[str, list[str]]) -> dict:
-    """The share code indexes these lists, so they may only grow at the end."""
+    """The share code indexes these lists, so the committed order only grows at the end:
+    committed ids keep their positions, ids that are new are appended in `current` order."""
     snapshot = json.loads(STATE_ORDER_PATH.read_text()) if STATE_ORDER_PATH.exists() else None
-    if snapshot is not None and snapshot["state_version"] == cfg["state_version"]:
-        for key, old in snapshot["order"].items():
-            if current[key][: len(old)] != old:
-                raise ValueError(f"state order for '{key}' changed (old links would decode wrongly): was {old}, now {current[key]}; bump state_version in {EXPORT_CONFIG_PATH.name} to reset deliberately")
-    state = {"state_version": cfg["state_version"], "order": current}
+    committed = snapshot["order"] if snapshot is not None and snapshot["state_version"] == cfg["state_version"] else {}
+    order = {}
+    for key, ids in current.items():
+        old = committed.get(key, [])
+        gone = [x for x in old if x not in ids]
+        if gone:
+            raise ValueError(f"state order for '{key}': {gone} no longer exist (old links would decode wrongly); bump state_version in {EXPORT_CONFIG_PATH.name} to reset deliberately")
+        order[key] = old + [x for x in ids if x not in old]
+    state = {"state_version": cfg["state_version"], "order": order}
     STATE_ORDER_PATH.write_text(json.dumps(state, indent=1) + "\n")
     return state
 
@@ -152,6 +164,10 @@ def export(con: duckdb.DuckDBPyConnection, cfg: dict, db_hash: str) -> tuple[dic
     variables = con.execute("SELECT variable_id, display_name, scope, measure, unit FROM variables").fetchall()
     vintages = con.execute("SELECT vintage_id, cycle_year, publication_label, horizon_start_quarter, horizon_end_quarter, origin FROM scenario_vintages ORDER BY horizon_start_quarter").fetchall()
     scen_names = [r[0] for r in con.execute("SELECT DISTINCT scenario_name FROM scenarios").fetchall()]
+    published_name = {(r[0], r[1]): r[2] for r in con.execute("SELECT vintage_id, scenario_name, published_name FROM scenarios WHERE published_name IS NOT NULL").fetchall()}
+    derived = {}
+    for v_id, var, bound in con.execute("SELECT vintage_id, variable_id, rounding_bound_pp FROM derived_series").fetchall():
+        derived.setdefault(v_id, {})[var] = bound
 
     missing = {
         "scenario(s) without a label": [s for s in scen_names if s not in cfg["scenarios"]],
@@ -169,16 +185,22 @@ def export(con: duckdb.DuckDBPyConnection, cfg: dict, db_hash: str) -> tuple[dic
         validate_state_spec(qv["state"], f"quick view '{qv['id']}'", var_ids, set(cfg["scenarios"]), vint_ids, complete=False)
     if not isinstance(cfg["limits"].get("calendar_context_quarters"), int) or cfg["limits"]["calendar_context_quarters"] < 0:
         raise ValueError("limits.calendar_context_quarters must be a non-negative integer")
+    if set(cfg["exercises"].values()) - set(cfg["exercise_labels"]):
+        raise ValueError(f"exercises without an exercise_labels entry: {sorted(set(cfg['exercises'].values()) - set(cfg['exercise_labels']))}")
+    if any(v not in vint_ids for v in cfg["exercises"]):
+        raise ValueError(f"exercises names unknown vintages: {sorted(set(cfg['exercises']) - set(vint_ids))}")
     for note in cfg["data_notes"]:
         if any(v not in var_ids for v in note["variables"]) or any(v not in vint_ids for v in note["vintages"]):
             raise ValueError(f"data note {note['id']} names an unknown variable or vintage")
 
+    value_keys = [tuple(r[0].split("__")) for r in con.execute("SELECT DISTINCT scenario_key FROM scenario_paths").fetchall()]
     var_order = sorted(var_ids, key=lambda v: (cfg["theme_order"].index(cfg["themes"][v]), [x[0] for x in variables].index(v)))
     scen_order = sorted(scen_names, key=lambda s: cfg["scenarios"][s]["order"])
     measure = {v[0]: v[3] for v in variables}
     horizon = {v[0]: (v[3], v[4]) for v in vintages}
     origin = {v[0]: v[5] for v in vintages}
     state = check_state_order(cfg, {"variables": var_order, "scenarios": scen_order, "vintages": vint_ids})
+    has_baseline = {v: any(k[0] == v and k[1] == "baseline" for k in value_keys) for v in vint_ids}
 
     # ---- published, level, deviation ------------------------------------------------------
     value: dict[tuple, dict[str, float]] = {}
@@ -210,12 +232,12 @@ def export(con: duckdb.DuckDBPyConnection, cfg: dict, db_hash: str) -> tuple[dic
                 raise ValueError(f"{v}/{sc}/{var}: Python level differs from the database view by {gap}")
             level_of[(v, sc, var)] = dict(zip(qs, level, strict=True))
         published_of[(v, sc, var)] = by_q
-        dev = None if sc == "baseline" else [view_dev[(v, sc, var, q)] for q in qs]
+        dev = None if sc == "baseline" or not has_baseline[v] else [view_dev[(v, sc, var, q)] for q in qs]
         series.append({"variable": var, "vintage": v, "scenario": sc, "origin": origin[v], "start": qs[0], "published": published, "level": level, "dev": dev, "dev_level": None})
         series[-1]["_keys"] = (v, sc, var, qs)
     for s in series:
         v, sc, var, qs = s.pop("_keys")
-        if s["level"] is not None and sc != "baseline":
+        if s["level"] is not None and sc != "baseline" and has_baseline[v]:
             base = level_of[(v, "baseline", var)]
             s["dev_level"] = [100.0 * (lv / base[q] - 1.0) for lv, q in zip(s["level"], qs, strict=True)]
         stats = extra.get((v, sc, var))
@@ -245,7 +267,7 @@ def export(con: duckdb.DuckDBPyConnection, cfg: dict, db_hash: str) -> tuple[dic
 
     for v in vint_ids:
         for var in var_order:
-            if (v, "baseline", var) not in published_of:
+            if not any((v, sc, var) in published_of for sc in scen_order):
                 continue
             window = quarters_from(horizon[v][0], 13)
             have = [q for q in window if (var, q) in latest]
@@ -255,12 +277,12 @@ def export(con: duckdb.DuckDBPyConnection, cfg: dict, db_hash: str) -> tuple[dic
                 raise ValueError(f"realized {v}/{var}: reported quarters are not a run from the start of the horizon: {have}")
             vals = [latest[(var, q)][0] for q in have]
             level = cumulate(vals) if measure[var] == "growth" else None
-            base = published_of[(v, "baseline", var)]
+            base = published_of.get((v, "baseline", var))
             base_level = level_of.get((v, "baseline", var))
             series.append({
                 "variable": var, "vintage": v, "scenario": "realized", "origin": "actual", "start": have[0], "published": vals,
-                "level": level, "dev": [x - base[q] for x, q in zip(vals, have, strict=True)],
-                "dev_level": None if level is None else [100.0 * (lv / base_level[q] - 1.0) for lv, q in zip(level, have, strict=True)],
+                "level": level, "dev": None if base is None else [x - base[q] for x, q in zip(vals, have, strict=True)],
+                "dev_level": None if level is None or base is None else [100.0 * (lv / base_level[q] - 1.0) for lv, q in zip(level, have, strict=True)],
                 "estimated": [i for i, q in enumerate(have) if (latest[(var, q)][1], var, q) in flagged],
             })
 
@@ -291,6 +313,10 @@ def export(con: duckdb.DuckDBPyConnection, cfg: dict, db_hash: str) -> tuple[dic
             "id": v, "cycle_year": year, "label": f"{year} ({suffix.capitalize()})" if suffix else str(year), "horizon_start": start, "horizon_end": end,
             "jump_off": last, "origin": org, "n_variables": len(ids), "variable_ids": ids,
             "scenarios": [s for s in scen_order if any(k[0] == v and k[1] == s for k in value)],
+            "published_names": {sc: name for (pv, sc), name in published_name.items() if pv == v},
+            "exercise": cfg["exercises"].get(v), "has_baseline": has_baseline[v],
+            "derived_variable_ids": sorted(derived.get(v, {}), key=var_order.index),
+            "derived_rounding_bound_pp": {var: derived[v][var] for var in sorted(derived.get(v, {}), key=var_order.index)},
             "estimate_statement": statements.get(v),
             "estimate_statement_note": None if v in statements or org != "fed" else "The Federal Reserve's files for this vintage contain no statement marking estimated values; none are flagged.",
         })
@@ -301,7 +327,7 @@ def export(con: duckdb.DuckDBPyConnection, cfg: dict, db_hash: str) -> tuple[dic
         reports.append({"vintage": v, "url": REPORT_MANIFEST[v], "retrieved": datetime.date.fromtimestamp(f.stat().st_mtime).isoformat() if f.exists() else None})
     catalog = {
         "schema_version": SCHEMA_VERSION, "state_version": cfg["state_version"], "built_at": datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds"),
-        "db_sha256": db_hash, "variables": cat_vars, "vintages": cat_vints,
+        "db_sha256": db_hash, "exercise_labels": cfg["exercise_labels"], "variables": cat_vars, "vintages": cat_vints,
         "scenarios": [{"name": s, **cfg["scenarios"][s]} for s in scen_order] + [{"name": "realized", "label": "Historical data, latest Federal Reserve publication", "family": "realized", "order": 99}],
         "sources": sources, "reports": reports, "methodology": cfg["methodology"], "gaps": cfg["gaps"], "data_notes": cfg["data_notes"], "defaults": cfg["defaults"], "quick_views": cfg["quick_views"], "limits": cfg["limits"],
         "labels": {"growth_unit": cfg["growth_unit_label"], "level_index": cfg["level_index_label"], "level_gap": cfg["level_gap_label"]},

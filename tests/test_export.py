@@ -31,19 +31,20 @@ CFG = {
     "growth_unit_label": "g", "level_index_label": "l", "level_gap_label": "d",
     "band_stats": {"lo": "p16", "hi": "p84", "label": "68% band"},
     "methodology": {"rounding_bound_percent": 0.171},
-    "gaps": [], "data_notes": [],
+    "exercises": {}, "exercise_labels": {"CCAR": "CCAR exercise"}, "gaps": [], "data_notes": [],
     "defaults": {"variable": "g", "scenarios": ["baseline"], "vintages": {"latest": 1}, "view": "published", "basis": "growth_gap", "axis": "calendar", "history": "latest", "range": "recent", "band": False},
     "quick_views": [{"id": "q", "label": "Q", "description": "d", "state": {"view": "deviation", "vintages": {"latest": 2}}}],
     "limits": {"calendar_context_quarters": 40},
 }
 
 
-def make_db(with_model_run: bool = False) -> duckdb.DuckDBPyConnection:
+def make_db(with_model_run: bool = False, with_no_baseline_vintage: bool = False) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect(":memory:")
     con.execute("CREATE TABLE variables (variable_id VARCHAR, display_name VARCHAR, scope VARCHAR, measure VARCHAR, unit VARCHAR)")
     con.execute("INSERT INTO variables VALUES ('g', 'Growth', 'domestic', 'growth', 'percent'), ('u', 'Level', 'domestic', 'level', 'percent')")
     con.execute("CREATE TABLE scenario_vintages (vintage_id VARCHAR, cycle_year INTEGER, publication_label VARCHAR, horizon_start_quarter VARCHAR, horizon_end_quarter VARCHAR, origin VARCHAR)")
-    con.execute("CREATE TABLE scenarios (scenario_key VARCHAR, vintage_id VARCHAR, scenario_name VARCHAR)")
+    con.execute("CREATE TABLE scenarios (scenario_key VARCHAR, vintage_id VARCHAR, scenario_name VARCHAR, published_name VARCHAR)")
+    con.execute("CREATE TABLE derived_series (vintage_id VARCHAR, variable_id VARCHAR, source_label VARCHAR, rule VARCHAR, rounding_bound_pp DOUBLE)")
     con.execute("CREATE TABLE scenario_paths (scenario_key VARCHAR, variable_id VARCHAR, quarter VARCHAR, stat VARCHAR, value DOUBLE, source VARCHAR)")
     con.execute("CREATE TABLE actuals (vintage_id VARCHAR, variable_id VARCHAR, quarter VARCHAR, value DOUBLE, source VARCHAR)")
     con.execute("CREATE TABLE sources (vintage_id VARCHAR, file_role VARCHAR, url VARCHAR, retrieved_date VARCHAR)")
@@ -52,13 +53,17 @@ def make_db(with_model_run: bool = False) -> duckdb.DuckDBPyConnection:
     vintages = [("2013", 2013, "2013", "2030Q1", "2032Q1", "fed"), ("2014", 2014, "2014", "2031Q1", "2033Q1", "fed")]
     if with_model_run:
         vintages.append(("bvar_demo", 2030, "bvar", "2034Q1", "2036Q1", "bvar"))
+    if with_no_baseline_vintage:
+        vintages.append(("2012", 2012, "2012", "2027Q1", "2029Q1", "fed"))
     for v in vintages:
         con.execute("INSERT INTO scenario_vintages VALUES (?, ?, ?, ?, ?, ?)", list(v))
         start = int(v[3][:4]) * 4
         quarters = [f"{(start + i) // 4}Q{(start + i) % 4 + 1}" for i in range(13)]
         for scen, base in (("baseline", 2.0), ("severely_adverse", -3.0)):
+            if scen == "baseline" and v[0] == "2012":
+                continue  # this vintage published no baseline
             key = f"{v[0]}__{scen}"
-            con.execute("INSERT INTO scenarios VALUES (?, ?, ?)", [key, v[0], scen])
+            con.execute("INSERT INTO scenarios VALUES (?, ?, ?, ?)", [key, v[0], scen, "Supervisory Stress Scenario" if v[0] == "2012" else None])
             for i, q in enumerate(quarters):
                 con.execute("INSERT INTO scenario_paths VALUES (?, 'g', ?, 'value', ?, 's')", [key, q, base + i * 0.1])
                 con.execute("INSERT INTO scenario_paths VALUES (?, 'u', ?, 'value', ?, 's')", [key, q, 4.0 + (i if scen == "severely_adverse" else 0) * 0.5])
@@ -75,6 +80,8 @@ def make_db(with_model_run: bool = False) -> duckdb.DuckDBPyConnection:
             for i in range(n):
                 q = f"{(first + i) // 4}Q{(first + i) % 4 + 1}"
                 con.execute("INSERT INTO actuals VALUES (?, ?, ?, ?, 's')", [v, var, q, 1.0 + i * 0.01 + (0.5 if v == "2014" else 0)])
+    if with_no_baseline_vintage:
+        con.execute("INSERT INTO derived_series VALUES ('2012', 'g', 'Level', 'rule', 0.03)")
     con.execute("INSERT INTO estimate_flags VALUES ('2014', 'g', '2030Q4', 'estimates', 'The 2030:Q4 values ... are estimates.', 's')")
     create_views(con)
     return con
@@ -172,14 +179,36 @@ def test_quick_view_may_be_partial_but_not_wrong(tmp_state):
         run(make_db(), {**CFG, "quick_views": [{"id": "q", "label": "Q", "description": "d", "state": {"axis": "weekly"}}]})
 
 
+def test_vintage_without_baseline_exports_no_deviation_and_marks_the_catalog(tmp_state):
+    catalog, paths, _ = run(make_db(with_no_baseline_vintage=True), {**CFG, "exercises": {"2012": "CCAR"}})
+    sa = find(paths["series"], vintage="2012", scenario="severely_adverse", variable="g")
+    assert sa["dev"] is None and sa["dev_level"] is None and sa["level"] is not None
+    v12 = next(v for v in catalog["vintages"] if v["id"] == "2012")
+    assert v12["has_baseline"] is False and v12["exercise"] == "CCAR"
+    assert v12["published_names"] == {"severely_adverse": "Supervisory Stress Scenario"}
+    assert v12["derived_variable_ids"] == ["g"] and v12["derived_rounding_bound_pp"] == {"g": 0.03}
+    v13 = next(v for v in catalog["vintages"] if v["id"] == "2013")
+    assert v13["has_baseline"] is True and v13["exercise"] is None and v13["published_names"] == {}
+
+
+def test_unknown_exercise_vintage_fails_fast(tmp_state):
+    with pytest.raises(ValueError, match="exercises"):
+        run(make_db(), {**CFG, "exercises": {"1999": "CCAR"}})
+
+
 def test_state_order_is_append_only(tmp_state):
     run(make_db())
-    run(make_db(with_model_run=True))  # a new vintage is appended: allowed
-    snapshot = json.loads(tmp_state.read_text())
-    snapshot["order"]["vintages"] = list(reversed(snapshot["order"]["vintages"]))
-    tmp_state.write_text(json.dumps(snapshot))
-    with pytest.raises(ValueError, match="state order"):
-        run(make_db(with_model_run=True))
+    committed = json.loads(tmp_state.read_text())["order"]["vintages"]
+    # a vintage that sorts BEFORE the committed ones in time is appended, never inserted
+    catalog, _, _ = run(make_db(with_no_baseline_vintage=True))
+    assert catalog["state_order"]["vintages"] == [*committed, "2012"]
+    assert [v["id"] for v in catalog["vintages"]][-1] != "2012"  # display order is chronological, share-code order is not
+
+
+def test_state_order_never_drops_an_id(tmp_state):
+    run(make_db(with_model_run=True))
+    with pytest.raises(ValueError, match="no longer exist"):
+        run(make_db())  # the model-run vintage disappeared: old links would decode wrongly
 
 
 def test_freshness_check(monkeypatch, tmp_path):
@@ -208,12 +237,20 @@ def test_real_json_spot_values():
     gdp = find(series, vintage="2026", scenario="severely_adverse", variable="real_gdp_growth")
     assert gdp["level"][5] == pytest.approx(95.39, abs=0.005)
     assert find(series, vintage="2026", scenario="baseline", variable="real_gdp_growth")["dev"] is None
-    assert len(series) == 1532
+    catalog = web_json("catalog.json")
+    ids = {v["id"] for v in catalog["vintages"]}
+    assert {s["vintage"] for s in series} == ids and {s["variable"] for s in series} == {v["id"] for v in catalog["variables"]}
 
 
 def test_real_catalog_is_complete_and_consistent():
     catalog = web_json("catalog.json")
-    assert len(catalog["variables"]) == 28 and len(catalog["vintages"]) == 15
-    assert catalog["state_order"]["vintages"] == [v["id"] for v in catalog["vintages"]]
+    ids = [v["id"] for v in catalog["vintages"]]
+    assert len(catalog["variables"]) == len(catalog["state_order"]["variables"])
+    assert sorted(ids) == sorted(catalog["state_order"]["vintages"])  # same ids; share-code order is append-only
     assert next(v for v in catalog["vintages"] if v["id"] == "2013")["estimate_statement"] is None
-    assert all(len(v["variable_ids"]) in (26, 28) for v in catalog["vintages"])
+    assert [v["horizon_start"] for v in catalog["vintages"]] == sorted(v["horizon_start"] for v in catalog["vintages"])
+    for v in catalog["vintages"]:
+        assert v["n_variables"] == len(v["variable_ids"])
+        assert set(v["derived_variable_ids"]) <= set(v["variable_ids"])
+        assert v["has_baseline"] == ("baseline" in v["scenarios"])
+        assert (v["exercise"] is not None) == bool(v["published_names"])  # the CCAR years carry the Fed's own scenario name

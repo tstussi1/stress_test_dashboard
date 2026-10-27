@@ -17,3 +17,6 @@ web/qa-screenshots/
 
 # Local agent/IDE configuration
 .devin/
+
+# Meeting notes, slides and personal planning files; local only
+/notes/

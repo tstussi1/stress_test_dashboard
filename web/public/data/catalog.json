@@ -1,8 +1,11 @@
 {
  "schema_version": 1,
  "state_version": 2,
- "built_at": "2026-10-26T21:15:16+00:00",
- "db_sha256": "58a4f9f7944dbcbab9f85cb0040a2f6504441dcffb9d37d0d266c96a7d7f86db",
+ "built_at": "2026-10-27T18:55:19+00:00",
+ "db_sha256": "8c33becb1416178beeb36ba4bedc84e509887330ce69d37f8ded5a54d71c9e18",
+ "exercise_labels": {
+  "CCAR": "Comprehensive Capital Analysis and Review (before the first DFAST in 2013)"
+ },
  "variables": [
   {
    "id": "real_gdp_growth",
@@ -287,6 +290,98 @@
  ],
  "vintages": [
   {
+   "id": "2011",
+   "cycle_year": 2011,
+   "label": "2011",
+   "horizon_start": "2010Q4",
+   "horizon_end": "2013Q4",
+   "jump_off": "2010Q3",
+   "origin": "fed",
+   "n_variables": 9,
+   "variable_ids": [
+    "real_gdp_growth",
+    "real_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "dow_jones_total_stock_market_index",
+    "house_price_index"
+   ],
+   "scenarios": [
+    "severely_adverse"
+   ],
+   "published_names": {
+    "severely_adverse": "Supervisory Stress Scenario"
+   },
+   "exercise": "CCAR",
+   "has_baseline": false,
+   "derived_variable_ids": [
+    "real_gdp_growth",
+    "real_disposable_income_growth",
+    "cpi_inflation_rate"
+   ],
+   "derived_rounding_bound_pp": {
+    "real_gdp_growth": 0.031163416542567823,
+    "real_disposable_income_growth": 0.04008501133625497,
+    "cpi_inflation_rate": 0.18662040630381682
+   },
+   "estimate_statement": null,
+   "estimate_statement_note": "The Federal Reserve's files for this vintage contain no statement marking estimated values; none are flagged."
+  },
+  {
+   "id": "2012",
+   "cycle_year": 2012,
+   "label": "2012",
+   "horizon_start": "2011Q4",
+   "horizon_end": "2014Q4",
+   "jump_off": "2011Q3",
+   "origin": "fed",
+   "n_variables": 26,
+   "variable_ids": [
+    "real_gdp_growth",
+    "nominal_gdp_growth",
+    "real_disposable_income_growth",
+    "nominal_disposable_income_growth",
+    "unemployment_rate",
+    "cpi_inflation_rate",
+    "treasury_3m_rate",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "mortgage_rate",
+    "dow_jones_total_stock_market_index",
+    "house_price_index",
+    "cre_price_index",
+    "vix",
+    "euro_real_gdp_growth",
+    "euro_inflation",
+    "devasia_real_gdp_growth",
+    "devasia_inflation",
+    "japan_real_gdp_growth",
+    "japan_inflation",
+    "uk_real_gdp_growth",
+    "uk_inflation",
+    "euro_usd_exchange_rate",
+    "devasia_usd_exchange_rate",
+    "japan_usd_exchange_rate",
+    "uk_usd_exchange_rate"
+   ],
+   "scenarios": [
+    "baseline",
+    "severely_adverse"
+   ],
+   "published_names": {
+    "severely_adverse": "Supervisory Stress Scenario"
+   },
+   "exercise": "CCAR",
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
+   "estimate_statement": null,
+   "estimate_statement_note": "The Federal Reserve's files for this vintage contain no statement marking estimated values; none are flagged."
+  },
+  {
    "id": "2013",
    "cycle_year": 2013,
    "label": "2013",
@@ -328,6 +423,11 @@
     "adverse",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": null,
    "estimate_statement_note": "The Federal Reserve's files for this vintage contain no statement marking estimated values; none are flagged."
   },
@@ -375,6 +475,11 @@
     "adverse",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2013Q3",
     "wording": "projected",
@@ -426,6 +531,11 @@
     "adverse",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2014Q3",
     "wording": "projected",
@@ -477,6 +587,11 @@
     "adverse",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2015Q4",
     "wording": "projected",
@@ -528,6 +643,11 @@
     "adverse",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2016Q4",
     "wording": "projected",
@@ -579,6 +699,11 @@
     "adverse",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2017Q4",
     "wording": "projected",
@@ -630,6 +755,11 @@
     "adverse",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2018Q4",
     "wording": "projected",
@@ -680,6 +810,11 @@
     "baseline",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2019Q4",
     "wording": "projected",
@@ -731,6 +866,11 @@
     "severely_adverse",
     "alternative_severe"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2020Q2",
     "wording": "projected",
@@ -781,6 +921,11 @@
     "baseline",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2020Q4",
     "wording": "estimates",
@@ -831,6 +976,11 @@
     "baseline",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2021Q4",
     "wording": "estimates",
@@ -881,6 +1031,11 @@
     "baseline",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2022Q4",
     "wording": "estimates",
@@ -933,6 +1088,11 @@
     "exploratory_a",
     "exploratory_b"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2023Q4",
     "wording": "estimates",
@@ -984,6 +1144,11 @@
     "severely_adverse",
     "exploratory"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2024Q4",
     "wording": "estimates",
@@ -1034,6 +1199,11 @@
     "baseline",
     "severely_adverse"
    ],
+   "published_names": {},
+   "exercise": null,
+   "has_baseline": true,
+   "derived_variable_ids": [],
+   "derived_rounding_bound_pp": {},
    "estimate_statement": {
     "quarter": "2025Q4",
     "wording": "estimates",
@@ -1093,6 +1263,24 @@
   }
  ],
  "sources": [
+  {
+   "vintage": "2011",
+   "file": "ccar_overview.pdf",
+   "url": "https://www.federalreserve.gov/newsevents/press/bcreg/bcreg20110318a1.pdf",
+   "retrieved": "2026-10-27"
+  },
+  {
+   "vintage": "2012",
+   "file": "instructions.pdf",
+   "url": "https://www.federalreserve.gov/newsevents/press/bcreg/bcreg20111122d1.pdf",
+   "retrieved": "2026-10-27"
+  },
+  {
+   "vintage": "2012",
+   "file": "methodology.pdf",
+   "url": "https://www.federalreserve.gov/newsevents/press/bcreg/bcreg20120312a1.pdf",
+   "retrieved": "2026-10-27"
+  },
   {
    "vintage": "2013",
    "file": "historical.xlsx",
@@ -1342,6 +1530,16 @@
  ],
  "reports": [
   {
+   "vintage": "2011",
+   "url": "https://www.federalreserve.gov/newsevents/press/bcreg/bcreg20110318a1.pdf",
+   "retrieved": "2026-10-27"
+  },
+  {
+   "vintage": "2012",
+   "url": "https://www.federalreserve.gov/newsevents/press/bcreg/bcreg20111122d1.pdf",
+   "retrieved": "2026-10-27"
+  },
+  {
    "vintage": "2013",
    "url": "https://www.federalreserve.gov/newsevents/pressreleases/files/bcreg20121115a1.pdf",
    "retrieved": "2026-10-23"
@@ -1424,17 +1622,7 @@
   {
    "id": "scap_2009",
    "title": "2009 (SCAP)",
-   "reason": "The Federal Reserve published only chart figures and summary statistics for this exercise, never a data table. Not digitized from images."
-  },
-  {
-   "id": "ccar_2011",
-   "title": "2011",
-   "reason": "Chart figures and summary statistics only; no published data table. Not digitized from images."
-  },
-  {
-   "id": "ccar_2012",
-   "title": "2012",
-   "reason": "Chart figures and summary statistics only; no published data table. Not digitized from images."
+   "reason": "The Federal Reserve's SCAP report (April 2009, Table 1) publishes only 12 annual numbers: real GDP growth (annual average), the unemployment rate (annual average) and the Case-Shiller 10-city house price change (Q4 over Q4) for 2009 and 2010, baseline and more adverse. They cannot sit on a quarterly axis without interpolation, and their definitions differ (annual averages, a different house price index), so 2009 is not in the database."
   },
   {
    "id": "covid_sensitivity_2020",
@@ -1485,6 +1673,8 @@
     "house_price_index"
    ],
    "vintages": [
+    "2011",
+    "2012",
     "2013",
     "2014",
     "2015",
@@ -1502,7 +1692,7 @@
     "2026"
    ],
    "title": "House price index definition",
-   "text": "Through the 2017 report the series is a CoreLogic index level seasonally adjusted by Federal Reserve staff; from 2018 the report describes the Z.1 price index for owner-occupied real estate. Levels differ between these vintages."
+   "text": "Through the 2017 report (including the 2011 and 2012 CCAR tables) the series is a CoreLogic index level seasonally adjusted by Federal Reserve staff; from 2018 the report describes the Z.1 price index for owner-occupied real estate. Levels differ between these vintages."
   },
   {
    "id": "bbb_series",
@@ -1510,6 +1700,7 @@
     "bbb_corporate_yield"
    ],
    "vintages": [
+    "2012",
     "2013",
     "2014",
     "2015",
@@ -1527,7 +1718,7 @@
     "2026"
    ],
    "title": "BBB corporate yield definition",
-   "text": "The source changes: a staff-constructed 10-year BBB yield through 2017, a Merrill Lynch 10-year BBB yield (Z.1) in 2018-2019, and the ICE BofAML 7-10 year corporate index yield from the February 2020 report."
+   "text": "The source changes: a staff-constructed 10-year BBB yield through 2017 (the 2011 table instead describes a yield from a smoothed curve fitted to individual corporate bond yields), a Merrill Lynch 10-year BBB yield (Z.1) in 2018-2019, and the ICE BofAML 7-10 year corporate index yield from the February 2020 report."
   },
   {
    "id": "dow_float_cap",
@@ -1564,6 +1755,82 @@
    ],
    "title": "2025Q4 unemployment rate and CPI inflation, 2026 vintage",
    "text": "The 2026 report states that the 2025Q4 values reflect an average of the November and December 2025 readings because the October 2025 data were not published."
+  },
+  {
+   "id": "ccar_2011_scope",
+   "variables": [
+    "real_gdp_growth",
+    "cpi_inflation_rate",
+    "real_disposable_income_growth",
+    "unemployment_rate",
+    "treasury_3m_rate",
+    "treasury_10y_yield",
+    "bbb_corporate_yield",
+    "dow_jones_total_stock_market_index",
+    "house_price_index"
+   ],
+   "vintages": [
+    "2011"
+   ],
+   "title": "CCAR 2011 scope",
+   "text": "The March 2011 CCAR report publishes one scenario, the supervisory stress scenario (no supervisory baseline was published), for 9 variables, with one quarter of history (2010Q3) and 13 scenario quarters. There are no international variables, nominal series, mortgage rate, commercial real estate prices or VIX. Because there is no baseline, 2011 has no deviation from baseline."
+  },
+  {
+   "id": "ccar_2011_derived",
+   "variables": [
+    "real_gdp_growth",
+    "cpi_inflation_rate",
+    "real_disposable_income_growth"
+   ],
+   "vintages": [
+    "2011"
+   ],
+   "title": "CCAR 2011 growth rates are calculated",
+   "text": "The 2011 table prints real GDP, the CPI and real disposable income as levels. The database stores the annualized percent change calculated from consecutive published levels, ((L_t / L_t-1)^4 - 1) x 100, the inverse of the compounding used for the Level path view. Rounding of the printed levels can move a calculated rate by up to about 0.03 pp (real GDP), 0.04 pp (real disposable income) and 0.19 pp (CPI). No growth rate exists for 2010Q3, the only history quarter."
+  },
+  {
+   "id": "ccar_2012_table",
+   "variables": [
+    "real_gdp_growth"
+   ],
+   "vintages": [
+    "2012"
+   ],
+   "title": "CCAR 2012 tables",
+   "text": "The 2012 instructions describe 25 variables (13 domestic) but the tables hold 26 (14 domestic, including real disposable income); the tables are used. They run 2001Q1-2014Q4: history through 2011Q3, then 13 scenario quarters. The stress tables equal the March 2012 methodology paper's Appendix A cell for cell. Text-layer defects in the PDF (mistyped headers in the baseline tables) are bypassed by identifying columns through their identical printed history."
+  },
+  {
+   "id": "ccar_2012_cpi",
+   "variables": [
+    "cpi_inflation_rate"
+   ],
+   "vintages": [
+    "2012"
+   ],
+   "title": "CCAR 2012 CPI path correction",
+   "text": "The 22 November 2011 instructions were corrected on 28 November 2011 for a computation error in the projected U.S. inflation rate of the stress scenario; the Federal Reserve-hosted file used here is the corrected one."
+  },
+  {
+   "id": "ccar_2011_definitions",
+   "variables": [
+    "treasury_10y_yield",
+    "bbb_corporate_yield"
+   ],
+   "vintages": [
+    "2011"
+   ],
+   "title": "CCAR 2011 yield definitions",
+   "text": "The 2011 table describes the 10-year Treasury and BBB yields as read from smoothed yield curves (Federal Reserve Board); the 2012 table describes them as constructed by Federal Reserve staff for the FRB/US model. Both are the same series family as published."
+  },
+  {
+   "id": "stress_scenario_name",
+   "variables": [],
+   "vintages": [
+    "2011",
+    "2012"
+   ],
+   "title": "Name of the 2011 and 2012 stress scenario",
+   "text": "CCAR 2011 and 2012 published the severe path as the 'Supervisory Stress Scenario'. DFAST 2013 named it the severely adverse scenario, and the Board's December 2017 notice on the scenario design framework refers to the supervisory severely adverse scenarios since 2011. The database labels it severely adverse so it can be compared across years; the original name is stored and shown."
   }
  ],
  "defaults": {
@@ -1614,6 +1881,20 @@
     "vintages": {
      "latest": 6
     },
+    "view": "deviation",
+    "axis": "horizon",
+    "band": true
+   }
+  },
+  {
+   "id": "all_years",
+   "label": "All years",
+   "description": "Every publication's severely adverse scenario minus its own baseline, aligned at the quarter each scenario starts, with the shaded minimum-to-maximum band. 2011 has no baseline and is not drawn.",
+   "state": {
+    "scenarios": [
+     "severely_adverse"
+    ],
+    "vintages": "all",
     "view": "deviation",
     "axis": "horizon",
     "band": true
@@ -1683,7 +1964,9 @@
    "2023",
    "2024",
    "2025",
-   "2026"
+   "2026",
+   "2011",
+   "2012"
   ]
  }
 }

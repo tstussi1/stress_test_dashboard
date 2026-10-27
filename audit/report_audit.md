@@ -2,6 +2,8 @@
 
 | vintage | tables | rows | cells agree | disagree | not in DB | unparsed lines |
 |---|---|---|---|---|---|---|
+| 2011 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 2012 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 2013 | 6 | 360 | 4680 | 0 | 0 | 0 |
 | 2014 | 6 | 384 | 5376 | 0 | 0 | 0 |
 | 2015 | 6 | 408 | 5712 | 0 | 0 | 0 |
@@ -17,6 +19,9 @@
 | 2024 | 6 | 244 | 3416 | 0 | 0 | 0 |
 | 2025 | 6 | 252 | 3528 | 0 | 0 | 0 |
 | 2026 | 6 | 260 | 3640 | 0 | 0 | 0 |
+
+Vintages with 0 tables (2011, 2012): the report's tables are not in the 'Table N.' layout this audit reads; for these vintages the report PDF is itself the raw source and is audited cell by cell in cell_audit.md.
+
 
 ## Problems
 

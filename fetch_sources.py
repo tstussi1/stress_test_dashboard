@@ -1,7 +1,7 @@
 """Download official Federal Reserve stress-test scenario source files for the dashboard.
 
 Purpose: fetch the published scenario-variable tables (and the historical actuals
-published alongside them) for the stress-test vintages 2013-2026 into
+published alongside them) for the stress-test vintages 2011-2026 into
 data/raw/stress_test/<vintage>/, so a later parsing step can build the scenario
 database from them. This is a fresh fetch for this workstream - it does not read
 or depend on scripts/stress_test_audit/ or data/raw/stress_test_audit/, which were
@@ -25,11 +25,14 @@ Key assumptions / scope:
   macro paths) or their accompanying historical actuals are fetched. Global-market-shock
   and counterparty-default component files, and the narrative/results PDFs, are out of
   scope for this database and are not fetched here.
-- 2009, 2011, and 2012 are not in the manifest: checked directly against the Federal
-  Reserve's own publications during planning, these vintages only have chart figures and
-  summary statistics, never a published data table. This is a documented exclusion, not
-  an oversight.
-- The June 2020 COVID "sensitivity analysis" (V/U/W-shaped alternative downside paths) is
+- 2011 and 2012 (the CCAR supervisory scenarios published in March 2011 and November 2011)
+  have no Excel or CSV, but their PDFs contain real data tables ("Supervisory Stress
+  Scenario" / "Supervisory Baseline Scenario" appendix pages), so they are fetched like any
+  other table source. 2012 also has a second copy of its stress tables (the March 2012
+  methodology paper), fetched into the same vintage folder so the build cross-checks the two.
+- 2009 (SCAP) is not fetched: the Fed's SCAP report publishes only 12 annual summary numbers
+  (annual-average GDP growth and unemployment, Q4/Q4 house prices, 2009 and 2010), which
+  cannot sit on the quarterly axis without interpolation. The June 2020 COVID "sensitivity analysis" (V/U/W-shaped alternative downside paths) is
   not in the manifest for the same reason: its accessible-version page
   (sensitivity_accessible.htm) was checked directly and contains only bank-outcome charts,
   no macro scenario data tables. Getting those three variables' paths would require
@@ -44,6 +47,7 @@ Key assumptions / scope:
 
 from __future__ import annotations
 
+import re
 import subprocess
 import zipfile
 from pathlib import Path
@@ -62,6 +66,19 @@ MANIFEST: dict[str, list[tuple[str, str, str]]] = {
     # 2013: the Nov 15, 2012 press release's own attachments - a clean Excel scenario
     # workbook, and a separate historical workbook back to 1976Q1. Independently found
     # and content-verified during planning (not from any prior script's manifest).
+    # 2011: CCAR 2011 "Objectives and Overview" (18 Mar 2011), Appendix: the supervisory stress
+    # scenario only (no baseline was published), 9 variables, mostly levels.
+    "2011": [
+        ("ccar_overview.pdf", f"{BOARD}/newsevents/press/bcreg/bcreg20110318a1.pdf", "pdf_ccar_appendix"),
+    ],
+    # 2012: CCAR 2012 instructions (22 Nov 2011), Appendix III: stress and baseline,
+    # domestic and international, 2001Q1-2014Q4.
+    "2012": [
+        ("instructions.pdf", f"{BOARD}/newsevents/press/bcreg/bcreg20111122d1.pdf", "pdf_ccar_appendix_full"),
+        # March 2012 methodology paper, Appendix A: a second Fed copy of the supervisory stress
+        # tables; the parser reconciles it cell by cell with the instructions (see parser.reconcile).
+        ("methodology.pdf", f"{BOARD}/newsevents/press/bcreg/bcreg20120312a1.pdf", "pdf_ccar_appendix"),
+    ],
     "2013": [
         ("scenarios.xlsx", f"{BOARD}/newsevents/pressreleases/files/bcreg20121115a2.xlsx", "xlsx_scenarios"),
         ("historical.xlsx", f"{BOARD}/newsevents/pressreleases/files/bcreg20121115a3.xlsx", "xlsx_historical"),
@@ -144,6 +161,8 @@ MANIFEST: dict[str, list[tuple[str, str, str]]] = {
 # (press-release attachment a1) and 2016 (press-release attachment a2; a1 is the CCAR
 # instructions), both read from the Fed's press-release pages.
 REPORT_MANIFEST: dict[str, str] = {
+    "2011": f"{BOARD}/newsevents/press/bcreg/bcreg20110318a1.pdf",
+    "2012": f"{BOARD}/newsevents/press/bcreg/bcreg20111122d1.pdf",
     "2013": f"{BOARD}/newsevents/pressreleases/files/bcreg20121115a1.pdf",
     "2014": f"{BOARD}/bankinforeg/bcreg20131101a1.pdf",
     "2015": f"{BOARD}/newsevents/press/bcreg/bcreg20141023a1.pdf",
@@ -161,6 +180,7 @@ REPORT_MANIFEST: dict[str, str] = {
     "2026": f"{BOARD}/publications/files/2026-final-supervisory-stress-test-scenarios-20260204.pdf",
 }
 REPORT_FILENAME = "scenarios_report.pdf"
+
 
 
 # ---------------------------------------------------------------------------
@@ -246,6 +266,28 @@ def _verify_pdf_scenarios(path: Path) -> None:
         raise ValueError(f"{path}: missing expected table captions: {missing}")
 
 
+def _ccar_table_pages(path: Path) -> int:
+    """Pages titled 'Supervisory Baseline/Stress Scenario' with at least 13 quarter rows."""
+    text = subprocess.run(["pdftotext", "-layout", str(path), "-"], capture_output=True, text=True, check=True).stdout
+    return sum(
+        1
+        for page in text.split("\f")
+        if re.search(r"Supervisory\s+(?:Baseline|Stress)\s+Scenario", page)
+        and len(re.findall(r"^\s*Q\s?[1-4]\s?\d{4}\s+\S", page, flags=re.MULTILINE)) >= 13
+    )
+
+
+def _verify_pdf_ccar_appendix(path: Path) -> None:
+    if _ccar_table_pages(path) < 1:
+        raise ValueError(f"{path}: no 'Supervisory ... Scenario' page with at least 13 quarter rows")
+
+
+def _verify_pdf_ccar_appendix_full(path: Path) -> None:
+    n = _ccar_table_pages(path)
+    if n < 4:
+        raise ValueError(f"{path}: expected 4 scenario table pages (stress/baseline x domestic/international), found {n}")
+
+
 def _verify_pdf_report(path: Path, vintage: str) -> None:
     """The report's first pages must name this vintage's year and be a scenarios report."""
     text = subprocess.run(
@@ -270,6 +312,8 @@ VERIFIERS = {
     "xlsx_scenarios": _verify_xlsx_scenarios,
     "xlsx_historical": _verify_xlsx_historical,
     "pdf_scenarios": _verify_pdf_scenarios,
+    "pdf_ccar_appendix": _verify_pdf_ccar_appendix,
+    "pdf_ccar_appendix_full": _verify_pdf_ccar_appendix_full,
 }
 
 

@@ -8,6 +8,10 @@ estimates"; "projected" in the 2014-2020 reports). This module extracts both, so
 database can (a) prove each variable's growth-versus-level classification from the Fed's
 wording instead of from a label, and (b) flag the Fed-marked estimates in the dashboard.
 
+The 2011-2012 CCAR documents make no asterisk statement; their tables carry a "Notes:" block of
+"Label: description" lines instead. That layout is read by `appendix_entries` and returns
+`statement = None` (no estimate flags: the Fed marked none).
+
 Required inputs: for each vintage, the Fed scenario report PDF at
 `<REPORTS_DIR>/<vintage>/scenarios_report.pdf` (`pdftotext`, reading-order text), or, for
 2013, whose PDF is letter-spaced and unreliable to parse, the "Data notes" sheet of
@@ -24,7 +28,10 @@ Key assumptions:
     `variables.variable_id_for`; the one definition-section naming that differs from the
     column header (the Dow Jones index "(Float Cap)") is listed in DEFINITION_ALIASES.
   - A definition labelled "Exchange rates" describes every exchange-rate variable.
-  - A label that matches no variable is an error (no silent skipping).
+  - A label that matches no variable is an error (no silent skipping) in the report layout. In
+    the 2011-2012 "Notes:" layout, a line starts a definition only when its label resolves to a
+    variable of that vintage (`variables.resolve_label`); other lines (source dates, the CPI
+    correction note) are not definitions, and a blank line ends a definition.
 """
 
 from __future__ import annotations
@@ -36,7 +43,7 @@ from pathlib import Path
 import openpyxl
 
 from paths import RAW_DIR, REPORTS_DIR, require_file
-from variables import VARIABLES, normalize_label, variable_id_for
+from variables import VARIABLES, normalize_label, resolve_label
 
 REPORT_FILENAME = "scenarios_report.pdf"
 LABEL = re.compile(r"^(\*?)((?:U\.S\.|U\.K\.|Euro area|Developing Asia|Japan)[^:]{3,120}|Exchange rates?):\s*(.*)$")
@@ -85,6 +92,45 @@ def pdf_entries(path: Path) -> tuple[list[tuple[bool, str, str]], dict]:
     return [(star, name, clean(body)) for star, name, body in entries], statement
 
 
+NOTES_LABEL = re.compile(r"^([^:]{2,70}):\s*(.*)$")
+APPENDIX_TITLE = re.compile(r"Supervisory\s+(?:Baseline|Stress)\s+Scenario")
+
+
+def appendix_entries(path: Path, vintage_id: str) -> list[tuple[bool, str, str]]:
+    """Definitions from the first table's "Notes:" block of a 2011-2012 appendix PDF (the
+    notes list every variable of the document; later tables repeat them)."""
+    text = subprocess.run(["pdftotext", "-layout", str(path), "-"], capture_output=True, text=True, check=True).stdout
+    pages = [part for part in APPENDIX_TITLE.split(text)[1:] if "Notes:" in part]
+    if not pages:
+        raise ValueError(f"{path}: no 'Notes:' block after a 'Supervisory ... Scenario' title")
+    block = pages[0].split("Notes:", 1)[1]
+    entries: list[list] = []
+    current: list | None = None
+    for line in (ln.strip() for ln in block.splitlines()):
+        m = NOTES_LABEL.match(line)
+        known = None
+        if m:
+            key = normalize_label(m.group(1))
+            if key in ("exchangerates", "exchangerate"):
+                known = True
+            else:
+                try:
+                    resolve_label(m.group(1), vintage_id)
+                    known = True
+                except KeyError:
+                    known = None
+        if known:
+            current = [False, m.group(1), m.group(2)]
+            entries.append(current)
+        elif not line:
+            current = None
+        elif current is not None:
+            current[2] += " " + line
+    if not entries:
+        raise ValueError(f"{path}: no definitions found in the Notes block")
+    return [(star, name, clean(body)) for star, name, body in entries]
+
+
 def xlsx_entries(path: Path) -> list[tuple[bool, str, str]]:
     ws = openpyxl.load_workbook(path, data_only=True)["Data notes"]
     entries = []
@@ -102,8 +148,12 @@ def read_vintage_definitions(vintage_id: str) -> tuple[list[dict], dict | None]:
         xlsx = require_file(RAW_DIR / "2013" / "scenarios.xlsx")
         entries, statement, source = xlsx_entries(xlsx), None, "stress_test/2013/scenarios.xlsx:Data notes"
     else:
-        entries, statement = pdf_entries(require_file(pdf))
+        require_file(pdf)
         source = f"stress_test_reports/{vintage_id}/{REPORT_FILENAME}"
+        if STATEMENT.search(subprocess.run(["pdftotext", str(pdf), "-"], capture_output=True, text=True, check=True).stdout):
+            entries, statement = pdf_entries(pdf)
+        else:
+            entries, statement = appendix_entries(pdf, vintage_id), None
     definitions: list[dict] = []
     for star, label, body in entries:
         key = normalize_label(label)
@@ -112,7 +162,7 @@ def read_vintage_definitions(vintage_id: str) -> tuple[list[dict], dict | None]:
         elif key in DEFINITION_ALIASES:
             ids = [DEFINITION_ALIASES[key]]
         else:
-            ids = [variable_id_for(label)]
+            ids = [resolve_label(label, vintage_id)[0]]
         for variable_id in ids:
             definitions.append({"variable_id": variable_id, "label": label, "definition": body, "estimate_marked": star, "source": source})
     seen = [d["variable_id"] for d in definitions]

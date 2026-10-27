@@ -28,6 +28,11 @@ Key assumptions:
   as an extra literal string in a variable's `canonical_labels`, with the reason
   stated in a comment (e.g. the 2013 "3-month Treasury yield" -> 2014+ "3-month
   Treasury rate" rewording of the same published series).
+- Source wordings that differ from a canonical label by more than formatting (the 2011-2012
+  CCAR documents word several series differently, and 2011 publishes three series as levels
+  instead of growth rates) are listed once in `SOURCE_LABELS`, each with the vintages in which
+  that wording is valid and, where the published number is a level, the derivation rule. They
+  are never added to `canonical_labels`, so a wording cannot silently become valid elsewhere.
 - A raw column header that does not normalize to any entry below is an error, not a
   skip or a guess (`variable_id_for` raises `KeyError`) - this is what forces a human
   to extend this file, by one entry, the moment a genuinely new or reworded variable
@@ -351,6 +356,79 @@ for _v in VARIABLES:
         _LOOKUP[_key] = _v.variable_id
 
 BY_ID: dict[str, Variable] = {v.variable_id: v for v in VARIABLES}
+
+# ---------------------------------------------------------------------------
+# Source wordings that are valid only in named vintages (see module docstring).
+# ---------------------------------------------------------------------------
+
+ANNUALIZED_PCT_CHANGE = "annualized_pct_change_from_level"
+
+
+@dataclass(frozen=True)
+class SourceLabel:
+    label: str  # wording as printed by the Fed (formatting noise is normalized away)
+    variable_id: str
+    vintages: tuple[str, ...]  # validity window: the wording means this only in these vintages
+    rule: str | None  # None: same published series; else how the stored value is derived from the printed one
+
+
+# 2011 (CCAR, March 2011) prints real GDP, CPI and real disposable income as LEVELS (the
+# table notes give "billions of chain-weighted 2005 dollars", "Bureau of Labor Statistics",
+# "billions of chain-weighted 2002 dollars"); the database stores the annualized percent
+# change, which is what every other vintage publishes for these variables.
+# 2011-2012 word the rates and price indexes "T-Bill Rate", "Treasury Bond Rate", "BBB Corporate
+# Bond Rate", "National House Price Index", "CRE Price Index", "VIX" in their notes; the 2012
+# notes also keep "Personal" in the income labels. Same published series, different wording.
+SOURCE_LABELS: tuple[SourceLabel, ...] = (
+    SourceLabel("Real GDP", "real_gdp_growth", ("2011",), ANNUALIZED_PCT_CHANGE),
+    SourceLabel("CPI", "cpi_inflation_rate", ("2011",), ANNUALIZED_PCT_CHANGE),
+    SourceLabel("Real Disposable Personal Income", "real_disposable_income_growth", ("2011",), ANNUALIZED_PCT_CHANGE),
+    SourceLabel("3-Month T-Bill Rate", "treasury_3m_rate", ("2011", "2012"), None),
+    SourceLabel("10-yr Treasury Bond Rate", "treasury_10y_yield", ("2011", "2012"), None),
+    SourceLabel("BBB Corporate Bond Rate", "bbb_corporate_yield", ("2011", "2012"), None),
+    SourceLabel("National House Price Index", "house_price_index", ("2011", "2012"), None),
+    SourceLabel("CRE Price Index", "cre_price_index", ("2012",), None),
+    SourceLabel("VIX", "vix", ("2012",), None),
+    SourceLabel("Real Disposable Personal Income growth", "real_disposable_income_growth", ("2012",), None),
+    SourceLabel("Nominal Disposable Personal Income growth", "nominal_disposable_income_growth", ("2012",), None),
+    # The text layer of the 2012 instructions PDF reads the "$" of "($/Euro)" as "S" and splits
+    # "Q1" of "Base = 2000 Q1" into "0 1" in the stress international table (confirmed in the
+    # Fed's own March 2012 paper, which prints "($/Euro)" and "Base = 2000 Q1").
+    SourceLabel("Euro Area Bilateral Dollar Exchange Rate (S/Euro)", "euro_usd_exchange_rate", ("2012",), None),
+    SourceLabel(
+        "Developing Asia Bilateral Dollar Exchange Rate (F/USD. Index. Base = 2000 0 1 )",
+        "devasia_usd_exchange_rate",
+        ("2012",),
+        None,
+    ),
+)
+
+_SOURCE_LOOKUP: dict[tuple[str, str], SourceLabel] = {}
+for _s in SOURCE_LABELS:
+    _key = normalize_label(_s.label)
+    if _key in _LOOKUP:
+        raise ValueError(f"SOURCE_LABELS entry {_s.label!r} duplicates a canonical label of {_LOOKUP[_key]!r}")
+    for _vintage in _s.vintages:
+        if (_key, _vintage) in _SOURCE_LOOKUP:
+            raise ValueError(f"SOURCE_LABELS lists {_s.label!r} twice for vintage {_vintage}")
+        _SOURCE_LOOKUP[(_key, _vintage)] = _s
+
+# Variables each vintage must publish (checked by build_database). Vintages not listed publish
+# DEFAULT_EXPECTED_VARIABLES (the Fed's own count from 2014 onward). 2011: 9 variables, no
+# international; 2012-2013: 26 (no 5-year Treasury yield, no prime rate).
+EXPECTED_VARIABLES: dict[str, int] = {"2011": 9, "2012": 26, "2013": 26}
+DEFAULT_EXPECTED_VARIABLES = 28
+
+
+def resolve_label(raw_label: str, vintage: str) -> tuple[str, str | None]:
+    """(variable_id, derivation rule or None) for a column header printed in `vintage`.
+    A SOURCE_LABELS wording is valid only in its own vintages; otherwise the header must be
+    a canonical label. Anything else raises."""
+    key = normalize_label(raw_label)
+    if (key, vintage) in _SOURCE_LOOKUP:
+        entry = _SOURCE_LOOKUP[(key, vintage)]
+        return entry.variable_id, entry.rule
+    return variable_id_for(raw_label), None
 
 
 def variable_id_for(raw_label: str) -> str | None:

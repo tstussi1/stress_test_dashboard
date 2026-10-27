@@ -2,16 +2,17 @@
 
 Purpose: run `parser.parse_vintage()` over every vintage in
 `data/raw/stress_test/`, canonicalize labels via `variables.py`, and load the
-result into `stress_test_dashboard/stress_test_scenarios.duckdb` - the dataset the
-Phase 2 dashboard (and, later, BVAR output) is built on. The database lives in
-`stress_test_dashboard/` rather than `data/processed/` per direct instruction: it
-is this workstream's own deliverable, not a data-construction artifact.
+result into `stress_test_scenarios.duckdb` (location: `paths.DB_PATH`) - the dataset the
+dashboard is built on. The database is this workstream's own deliverable, kept in the repository
+folder (gitignored, rebuilt from the public Fed files).
 
 Required inputs: `data/raw/stress_test/<vintage>/*` (fetched by `fetch_sources.py`).
 
-Outputs: `stress_test_dashboard/stress_test_scenarios.duckdb` with tables
-`variables`, `scenario_vintages`, `scenarios`, `scenario_paths`, `actuals`,
-`sources`, and views `scenario_paths_level`, `scenario_vs_baseline`. Rebuilds from
+Outputs: the DuckDB database with tables
+`variables`, `scenario_vintages`, `scenarios` (with `published_name`, the Fed's own title where
+it differs from the standard scenario name), `scenario_paths`, `actuals`, `sources`,
+`variable_definitions`, `estimate_flags`, `derived_series` (series calculated from published
+levels, with rounding bound), and views `scenario_paths_level`, `scenario_vs_baseline`. Rebuilds from
 scratch every run (drops and recreates), so it is always a clean reflection of the
 current raw files and current `variables.py`/`parser.py` logic - never a target to
 patch in place.
@@ -48,7 +49,7 @@ from fed_definitions import read_vintage_definitions
 from fetch_sources import MANIFEST
 from parser import parse_vintage
 from paths import DB_PATH, RAW_DIR, require_dir
-from variables import VARIABLES
+from variables import DEFAULT_EXPECTED_VARIABLES, EXPECTED_VARIABLES, VARIABLES
 
 
 def resolve_shared_exploratory_international(scenario_rows: list[dict]) -> list[dict]:
@@ -119,7 +120,8 @@ def build() -> None:
         CREATE TABLE scenarios (
             scenario_key VARCHAR PRIMARY KEY,
             vintage_id VARCHAR REFERENCES scenario_vintages(vintage_id),
-            scenario_name VARCHAR
+            scenario_name VARCHAR,
+            published_name VARCHAR
         )
     """)
     con.execute("""
@@ -164,6 +166,16 @@ def build() -> None:
         )
     """)
     con.execute("""
+        CREATE TABLE derived_series (
+            vintage_id VARCHAR REFERENCES scenario_vintages(vintage_id),
+            variable_id VARCHAR REFERENCES variables(variable_id),
+            source_label VARCHAR,
+            rule VARCHAR,
+            rounding_bound_pp DOUBLE,
+            PRIMARY KEY (vintage_id, variable_id)
+        )
+    """)
+    con.execute("""
         CREATE TABLE estimate_flags (
             vintage_id VARCHAR REFERENCES scenario_vintages(vintage_id),
             variable_id VARCHAR REFERENCES variables(variable_id),
@@ -197,12 +209,13 @@ def build() -> None:
         source_rows,
         definition_rows,
         flag_rows,
-    ) = [], [], [], [], [], [], []
+        derived_rows,
+    ) = [], [], [], [], [], [], [], []
     for vintage_dir in sorted(require_dir(RAW_DIR).iterdir()):
         if not vintage_dir.is_dir():
             continue
         vintage_label = vintage_dir.name
-        scenario_rows, actual_rows = parse_vintage(vintage_dir)
+        scenario_rows, actual_rows, derived = parse_vintage(vintage_dir)
         scenario_rows = resolve_shared_exploratory_international(scenario_rows)
 
         cycle_year, publication_label = vintage_label_parts(vintage_label)
@@ -214,13 +227,15 @@ def build() -> None:
 
         for scenario_name in sorted({r["scenario_name"] for r in scenario_rows}):
             scenario_key = f"{vintage_label}__{scenario_name}"
-            scenario_table_rows.append((scenario_key, vintage_label, scenario_name))
+            published = {r["published_name"] for r in scenario_rows if r["scenario_name"] == scenario_name}
+            scenario_table_rows.append((scenario_key, vintage_label, scenario_name, published.pop() if len(published) == 1 else None))
             scenario_path_rows.extend(
                 (scenario_key, r["variable_id"], r["quarter"], r["value"], r["source"])
                 for r in scenario_rows
                 if r["scenario_name"] == scenario_name
             )
 
+        derived_rows.extend((vintage_label, d["variable_id"], d["source_label"], d["rule"], d["rounding_bound_pp"]) for d in derived)
         actual_table_rows.extend(
             (vintage_label, r["variable_id"], r["quarter"], r["value"], r["source"])
             for r in actual_rows
@@ -278,6 +293,7 @@ def build() -> None:
     )
     bulk_insert(con, "sources", source_rows)
     bulk_insert(con, "variable_definitions", definition_rows)
+    bulk_insert(con, "derived_series", derived_rows)
     bulk_insert(con, "estimate_flags", flag_rows)
     con.execute("COMMIT")
     create_views(con)
@@ -339,15 +355,15 @@ def run_validations(con: duckdb.DuckDBPyConnection) -> None:
     if bad:
         errors.append(f"scenario_key(s) without exactly 13 quarters: {bad}")
 
-    # 2. Variable count per vintage matches the Fed's own stated count.
-    bad = con.execute("""
+    # 2. Variable count per vintage matches the expectation declared in variables.py.
+    counts = con.execute("""
         SELECT s.vintage_id, COUNT(DISTINCT sp.variable_id) AS n_vars
         FROM scenario_paths sp JOIN scenarios s ON s.scenario_key = sp.scenario_key
         GROUP BY s.vintage_id
-        HAVING n_vars != CASE WHEN s.vintage_id = '2013' THEN 26 ELSE 28 END
     """).fetchall()
+    bad = [(v, n, EXPECTED_VARIABLES.get(v, DEFAULT_EXPECTED_VARIABLES)) for v, n in counts if n != EXPECTED_VARIABLES.get(v, DEFAULT_EXPECTED_VARIABLES)]
     if bad:
-        errors.append(f"vintage(s) with unexpected variable count: {bad}")
+        errors.append(f"vintage(s) with unexpected variable count (vintage, found, expected): {bad}")
 
     # 3. No duplicate (scenario_key, variable_id, quarter) rows.
     bad = con.execute("""
@@ -380,7 +396,11 @@ def run_validations(con: duckdb.DuckDBPyConnection) -> None:
     # 6. Every variable a vintage publishes has the Fed's own definition for that vintage
     # (and nothing else does).
     bad = con.execute("""
-        WITH published AS (SELECT DISTINCT vintage_id, variable_id FROM actuals)
+        WITH published AS (
+            SELECT DISTINCT vintage_id, variable_id FROM actuals
+            UNION
+            SELECT DISTINCT s.vintage_id, sp.variable_id FROM scenario_paths sp JOIN scenarios s USING (scenario_key)
+        )
         SELECT 'no definition', p.vintage_id, p.variable_id
         FROM published p LEFT JOIN variable_definitions d USING (vintage_id, variable_id)
         WHERE d.variable_id IS NULL

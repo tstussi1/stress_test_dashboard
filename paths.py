@@ -13,17 +13,14 @@ Outputs: the path constants below plus the two `require_*` helpers.
 Key assumptions:
 - `DASHBOARD_DIR` is the folder containing this file, so it is always correct wherever
   the folder lives.
-- Each external location has one environment variable that overrides its default. The
-  defaults describe today's layout inside the research repository (the parent of this
-  folder is the repository root). In a standalone repository, set the variables (or
-  change the defaults here) once.
+- Each location has one environment variable that overrides its default. The defaults
+  all live inside this repository (`data/` and the database file are gitignored).
 - A location that does not exist is an error, never silently replaced by another one.
 
 Environment variables (all optional):
   STRESS_TEST_RAW_DIR        raw Fed scenario files, one sub-folder per vintage
   STRESS_TEST_REPORTS_DIR    the Fed's full scenario-report PDFs (audit / estimate flags)
   STRESS_TEST_DB_PATH        the DuckDB database (system of record)
-  STRESS_TEST_REFERENCE_DIR  reference copies of Fed report PDFs (audit cross-check)
   STRESS_TEST_AUDIT_DIR      where audit reports are written
   STRESS_TEST_WEB_DATA_DIR   where the exporter writes the browser JSON snapshot
   STRESS_TEST_EXPORT_CONFIG  the exporter's labels/themes/gaps/defaults YAML
@@ -36,7 +33,6 @@ import os
 from pathlib import Path
 
 DASHBOARD_DIR = Path(__file__).resolve().parent
-_REPO_ROOT = DASHBOARD_DIR.parent  # the research repository; only used for defaults below
 
 
 def _location(env_var: str, default: Path) -> Path:
@@ -44,12 +40,9 @@ def _location(env_var: str, default: Path) -> Path:
     return Path(value).expanduser().resolve() if value else default
 
 
-RAW_DIR = _location("STRESS_TEST_RAW_DIR", _REPO_ROOT / "data" / "raw" / "stress_test")
-REPORTS_DIR = _location("STRESS_TEST_REPORTS_DIR", _REPO_ROOT / "data" / "raw" / "stress_test_reports")
+RAW_DIR = _location("STRESS_TEST_RAW_DIR", DASHBOARD_DIR / "data" / "raw" / "stress_test")
+REPORTS_DIR = _location("STRESS_TEST_REPORTS_DIR", DASHBOARD_DIR / "data" / "raw" / "stress_test_reports")
 DB_PATH = _location("STRESS_TEST_DB_PATH", DASHBOARD_DIR / "stress_test_scenarios.duckdb")
-REFERENCE_DIR = _location(
-    "STRESS_TEST_REFERENCE_DIR", _REPO_ROOT / "documentation" / "reference" / "stress_tests"
-)
 AUDIT_DIR = _location("STRESS_TEST_AUDIT_DIR", DASHBOARD_DIR / "audit")
 WEB_DATA_DIR = _location("STRESS_TEST_WEB_DATA_DIR", DASHBOARD_DIR / "web" / "public" / "data")
 
@@ -61,7 +54,6 @@ _ENV_FOR = {
     RAW_DIR: "STRESS_TEST_RAW_DIR",
     REPORTS_DIR: "STRESS_TEST_REPORTS_DIR",
     DB_PATH: "STRESS_TEST_DB_PATH",
-    REFERENCE_DIR: "STRESS_TEST_REFERENCE_DIR",
     AUDIT_DIR: "STRESS_TEST_AUDIT_DIR",
     WEB_DATA_DIR: "STRESS_TEST_WEB_DATA_DIR",
     EXPORT_CONFIG_PATH: "STRESS_TEST_EXPORT_CONFIG",

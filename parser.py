@@ -3,18 +3,21 @@
 Purpose: a single, format-agnostic parsing pipeline for every file fetched by
 `fetch_sources.py` into `data/raw/stress_test/<vintage>/*`, replacing a per-layout
 ("family") parser with one shared interpreter fed by four small format readers.
-Pre-2013 vintages, whenever added, only need a new reader if they use a genuinely
-new container format (a fifth entry in `READERS`); the interpretation logic below
+The 2011-2012 CCAR documents needed one more reader (`read_pdf_appendix`, a PDF page
+titled "Supervisory Stress/Baseline Scenario"); the interpretation logic below
 (scenario/historical classification, history/projection split, label
-canonicalization, cross-source reconciliation) never needs vintage-specific code.
+canonicalization, derivation of growth from levels, cross-source reconciliation) never
+needs vintage-specific code.
 
 Required inputs: `data/raw/stress_test/<vintage>/*.{xlsx,htm,csv,pdf}`.
 
-Outputs: `parse_vintage(vintage_dir)` returns `(scenario_rows, actual_rows)`.
+Outputs: `parse_vintage(vintage_dir)` returns `(scenario_rows, actual_rows, derived)`.
 `scenario_rows` dicts have keys `scenario_name`, `variable_id`, `quarter`,
-`value`, `source`; `actual_rows` dicts have the same minus `scenario_name` (an
+`value`, `source`, `published_name` (the Fed's own title where the standard name differs, else None); `actual_rows` dicts have the same minus `scenario_name` (an
 actual isn't scenario-specific) - the normalized long-format rows
-`build_database.py` loads into `scenario_paths`/`actuals`.
+`build_database.py` loads into `scenario_paths`/`actuals`. `derived` lists the series whose
+stored value was calculated from a published level (see below), one dict per variable with
+`variable_id, source_label, rule, rounding_bound_pp`.
 
 Key assumptions:
 - A "table" (whatever its container format) is reduced to one shared primitive,
@@ -32,6 +35,16 @@ Key assumptions:
   margin) is a combined history+projection table (2013 xlsx, 2014 pdf, 2015 htm,
   2016 csv): its last 13 rows are the scenario, everything earlier is that
   variable's actual history. A classified-as-historical table is never split.
+- A table that itself states its last historical quarter ("Sources for data through
+  2011: Q3 ... values after that date are assumptions", the 2011-2012 appendix tables) is
+  split there instead: history up to and including that quarter, the 13 quarters after it
+  are the scenario (anything else raises).
+- A column whose printed values are levels but which `variables.SOURCE_LABELS` maps to a
+  growth variable is converted with the annualized percent change
+  g_t = ((L_t / L_{t-1})^4 - 1) * 100. Every scenario quarter needs the level of the
+  immediately preceding quarter in the same table (else raise); a history quarter without
+  one is left unpublished, never filled. The rounding bound of the printed levels is
+  recorded in `derived`.
 - When more than one source reports an actual value for the same
   (variable_id, quarter) - e.g. 2013's three scenario sheets' embedded history
   agreeing with each other and with the dedicated historical.xlsx, or a vintage's
@@ -55,13 +68,16 @@ import pandas as pd
 import pymupdf
 from bs4 import BeautifulSoup
 
-from variables import normalize_label, variable_id_for
+from variables import ANNUALIZED_PCT_CHANGE, normalize_label, resolve_label
 
 # Horizon lengths actually published 2013-2026 top out at 13 quarters; a
 # classified-as-scenario table with more rows than this must be a combined
 # history+projection table (decades of quarters), not a longer horizon.
 MAX_PUBLISHED_HORIZON_QUARTERS = 13
 COMBINED_TABLE_ROW_THRESHOLD = 20
+# A derived value has no printed decimals; this makes `reconcile` hold it to a tight tolerance
+# against any other source reporting the same fact, so a conflict is raised, never absorbed.
+DERIVED_DECIMALS = 6
 
 # Header cells that name the date/scenario-name column itself, never a variable.
 _NON_VARIABLE_HEADERS = {"date", "obs", "column1", "scenarioname"}
@@ -84,11 +100,16 @@ class RawTable:
     rows: list[
         tuple[str, str | None, list[str]]
     ]  # (date_text, row_scenario_name, raw_values)
+    last_historical: str | None = None  # "2011Q3" when the table itself states it
 
 
 # ---------------------------------------------------------------------------
 # Scenario/historical classification - shared by every reader's output.
 # ---------------------------------------------------------------------------
+
+# The Fed's original name where the standard label differs (CCAR 2011-2012 "Supervisory Stress
+# Scenario" is stored as severely_adverse); kept so the name stays visible downstream.
+_RENAMED_SCENARIO = re.compile(r"supervisory\s+stress\s+scenario", re.IGNORECASE)
 
 # Ordered so "severely adverse" is tried before the plain "adverse" it contains;
 # this is the complete, closed set of scenario-exercise names the Fed has ever
@@ -97,6 +118,9 @@ class RawTable:
 # future names might be).
 _SCENARIO_PATTERNS: tuple[tuple[str, re.Pattern], ...] = (
     ("severely_adverse", re.compile(r"severely\s+adverse", re.IGNORECASE)),
+    # CCAR 2011-2012 name the severe path "Supervisory Stress Scenario"; the Board's 2017
+    # scenario-design notice treats these as the first supervisory severely adverse scenarios.
+    ("severely_adverse", _RENAMED_SCENARIO),
     ("alternative_severe", re.compile(r"alternative\s+severe", re.IGNORECASE)),
     ("adverse", re.compile(r"\badverse\b", re.IGNORECASE)),
     ("baseline", re.compile(r"\bbaseline\b", re.IGNORECASE)),
@@ -142,7 +166,8 @@ def parse_quarter(text: str) -> str:
 
 def to_number(raw: object) -> tuple[float, int]:
     """Parse a published cell value; returns (value, decimal_places_as_published)."""
-    s = str(raw).strip().replace(",", "").replace("%", "").replace("\u2212", "-")
+    s = str(raw).strip().replace(",", "").replace("%", "")
+    s = s.translate(str.maketrans({"\u2212": "-", "\u2010": "-", "\u2011": "-"}))
     if s in ("", "\u2014", "-", "n.a.", "n.a", "nan", "None"):
         return float("nan"), 0
     value = float(s)
@@ -335,7 +360,87 @@ def read_pdf(path: Path) -> list[RawTable]:
     return tables
 
 
-READERS = {".xlsx": read_xlsx, ".htm": read_htm, ".csv": read_csv, ".pdf": read_pdf}
+_APPENDIX_ROW = re.compile(r"^Q\s*([1-4])\s*(\d\s*\d\s*\d\s*\d)\s+(\S.*)$")
+_APPENDIX_LAST_HISTORICAL = re.compile(r"data\s+through\s+(\d{4})\s*:\s*Q\s*([1-4])")
+_MIN_APPENDIX_VALUES = 5  # a line starting with a quarter and at least this many numbers is a data row
+
+
+def read_pdf_appendix(path: Path) -> list[RawTable]:
+    """CCAR 2011-2012 appendix tables: a page titled "Supervisory Baseline/Stress Scenario"
+    whose data rows start with a quarter ("Q1 2001", tolerating letter spacing). Words are
+    placed on the page as displayed (rotation applied: the 2011 appendix is a landscape page),
+    grouped into lines by y, and column headers are assigned to the nearest value column by
+    x. Every row must hold exactly as many values as the first row, else raise."""
+    tables = []
+    for page in pymupdf.open(path):
+        first_line = page.get_text().strip().split("\n")[0] if page.get_text().strip() else ""
+        if re.match(r"^Table \d+[A-Z]\.", first_line):
+            continue  # a "Table 1A." page belongs to read_pdf
+        words = sorted(
+            ((r.x0, r.y0, r.x1, r.y1, w[4]) for w in page.get_text("words") for r in [pymupdf.Rect(w[:4]) * page.rotation_matrix]),
+            key=lambda w: (w[1], w[0]),
+        )
+        lines: list[list[tuple]] = []
+        for w in words:
+            if lines and abs(w[1] - lines[-1][0][1]) <= 3.0:
+                lines[-1].append(w)
+            else:
+                lines.append([w])
+        lines = [sorted(ln, key=lambda w: w[0]) for ln in lines]
+        data_lines = [
+            ln for ln in lines
+            if (m := _APPENDIX_ROW.match(" ".join(w[4] for w in ln))) and len(m.group(3).split()) >= _MIN_APPENDIX_VALUES
+        ]
+        page_text = " ".join(w[4] for w in words)
+        title = re.search(r"Supervisory (Baseline|Stress) Scenario", page_text)
+        if not data_lines:
+            continue
+        if not title:
+            raise ValueError(f"{path} page {page.number + 1}: quarter rows without a 'Supervisory Baseline/Stress Scenario' title")
+        statement = _APPENDIX_LAST_HISTORICAL.search(page_text)
+        if not statement:
+            raise ValueError(f"{path} page {page.number + 1}: no 'data through <year>: Q<n>' statement of the last historical quarter")
+        title_bottom = next(w[3] for w in words if w[4] == "Scenario")
+        first = data_lines[0]
+        n_values = len(_APPENDIX_ROW.match(" ".join(w[4] for w in first)).group(3).split())
+        value_words, date_words = first[-n_values:], first[:-n_values]
+        centers = [(w[0] + w[2]) / 2 for w in value_words]
+        date_right = max(w[2] for w in date_words)
+        # Header cells are typeset as separate text lines (a cell's words wrap over several lines),
+        # so the line, not the word, is the unit that is centred over its value column.
+        header_cells = [
+            (r, "".join(span["text"] for span in line["spans"]).strip())
+            for block in page.get_text("dict")["blocks"] if block["type"] == 0
+            for line in block["lines"]
+            for r in [pymupdf.Rect(line["bbox"]) * page.rotation_matrix]
+        ]
+        buckets: dict[int, list] = {i: [] for i in range(n_values)}
+        row_center_y = sum((w[1] + w[3]) / 2 for w in first) / len(first)
+        for r, text in header_cells:
+            cx, cy = (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2
+            if text and title_bottom < cy < row_center_y - 3 and cx > date_right:
+                buckets[min(range(n_values), key=lambda i: abs(centers[i] - cx))].append((round(r.y0), r.x0, text))
+        header = [" ".join(t for _, _, t in sorted(b)) for b in buckets.values()]
+        rows = []
+        for ln in data_lines:
+            m = _APPENDIX_ROW.match(" ".join(w[4] for w in ln))
+            values = m.group(3).split()
+            if len(values) != n_values:
+                raise ValueError(f"{path} page {page.number + 1}: row 'Q{m.group(1)} {m.group(2)}' has {len(values)} values, expected {n_values}")
+            rows.append((f"Q{m.group(1)} {m.group(2).replace(' ', '')}", None, values))
+        tables.append(
+            RawTable(path, caption=title.group(0), header=header, rows=rows,
+                     last_historical=f"{statement.group(1)}Q{statement.group(2)}")
+        )
+    return tables
+
+
+def read_pdf_any(path: Path) -> list[RawTable]:
+    """A PDF holds either "Table 1A." pages (2014) or appendix pages (2011-2012)."""
+    return read_pdf(path) + read_pdf_appendix(path)
+
+
+READERS = {".xlsx": read_xlsx, ".htm": read_htm, ".csv": read_csv, ".pdf": read_pdf_any}
 
 
 # ---------------------------------------------------------------------------
@@ -409,58 +514,122 @@ def reconcile(observations: list[tuple[float, int, str]]) -> tuple[float, str]:
 # ---------------------------------------------------------------------------
 
 
-def parse_vintage(vintage_dir: Path) -> tuple[list[dict], list[dict]]:
-    """Returns (scenario_rows, actual_rows). Each scenario_row has keys
-    scenario_name/scope/variable_id/quarter/value/source; each actual_row has
-    scope/variable_id/quarter/value/source (no scenario_name - an actual isn't
-    scenario-specific)."""
+def column_header(table: RawTable, vintage_tables: list[RawTable]) -> list[str]:
+    """The column labels to resolve for `table`. Tables that state their last historical quarter
+    share one printed history across scenarios and across the Fed documents of the vintage (the
+    Fed's statement: values up to that date are data), so the first table of the vintage with
+    the identical history rows defines the columns of every table with that history. This
+    matters because the text layers are damaged in places (the 2012 baseline tables: a mistyped
+    'Unemplovm ent', Developing Asia columns labelled 'Japan', merged header cells; the March
+    2012 paper: truncated words); the numbers identify the columns, the damaged text does not.
+    Other tables read their own header."""
+    if not table.last_historical:
+        return table.header
+
+    def history(t: RawTable) -> list:
+        return [r[2] for r in t.rows if parse_quarter(r[0]) <= t.last_historical]
+
+    donor = next((t for t in vintage_tables if t.last_historical and history(t) == history(table)), None)
+    if donor is None:
+        raise ValueError(f"{table.source_file.name}: no table of the vintage has this table's printed history")
+    if len(donor.header) != len(table.header):
+        raise ValueError(f"{table.source_file.name}: tables with identical history have different widths")
+    return donor.header
+
+
+def previous_quarter(quarter: str) -> str:
+    year, n = int(quarter[:4]), int(quarter[5])
+    return f"{year}Q{n - 1}" if n > 1 else f"{year - 1}Q4"
+
+
+def level_to_growth(level: float, prior: float) -> float:
+    """Annualized percent change between two consecutive quarterly levels."""
+    return ((level / prior) ** 4 - 1) * 100
+
+
+def rounding_bound_pp(level: float, prior: float, level_decimals: int, prior_decimals: int) -> float:
+    """Largest change of the annualized growth when each printed level moves by half a unit of
+    its last printed digit, in the direction that moves the growth most."""
+    e, e0 = 0.5 * 10 ** (-level_decimals), 0.5 * 10 ** (-prior_decimals)
+    g = level_to_growth(level, prior)
+    return max(abs(level_to_growth(level + e, prior - e0) - g), abs(level_to_growth(level - e, prior + e0) - g))
+
+
+def parse_vintage(vintage_dir: Path) -> tuple[list[dict], list[dict], list[dict]]:
+    """Returns (scenario_rows, actual_rows, derived). Each scenario_row has keys
+    scenario_name/variable_id/quarter/value/source; each actual_row has
+    variable_id/quarter/value/source (no scenario_name - an actual isn't
+    scenario-specific); each derived entry has variable_id/source_label/rule/rounding_bound_pp
+    for a series calculated from published levels."""
+    vintage = vintage_dir.name
     scenario_obs: dict[tuple[str, str, str], list[tuple[float, int, str]]] = {}
     actual_obs: dict[tuple[str, str], list[tuple[float, int, str]]] = {}
+    derived: dict[str, dict] = {}
+    published_names: dict[str, set[str]] = {}
 
-    for f in sorted(vintage_dir.iterdir()):
-        reader = READERS.get(f.suffix)
-        if reader is None:
-            continue
-        for table in reader(f):
-            row_scenario_names = {r[1] for r in table.rows if r[1]}
-            kind, scenario_name = classify_table(
-                (table.caption, f.stem), row_scenario_names
-            )
+    files = [(f, READERS[f.suffix]) for f in sorted(vintage_dir.iterdir()) if f.suffix in READERS]
+    vintage_tables = [(f, table) for f, reader in files for table in reader(f)]
+    for f, table in vintage_tables:
+        row_scenario_names = {r[1] for r in table.rows if r[1]}
+        kind, scenario_name = classify_table(
+            (table.caption, f.stem), row_scenario_names
+        )
 
-            split = (
-                kind == "scenario" and len(table.rows) > COMBINED_TABLE_ROW_THRESHOLD
-            )
-            if kind == "historical":
-                hist_rows, scen_rows = table.rows, []
-            elif split:
-                hist_rows, scen_rows = (
-                    table.rows[:-MAX_PUBLISHED_HORIZON_QUARTERS],
-                    table.rows[-MAX_PUBLISHED_HORIZON_QUARTERS:],
+        renamed = _RENAMED_SCENARIO.search(table.caption or "") if kind == "scenario" else None
+        if renamed:
+            published_names.setdefault(scenario_name, set()).add(" ".join(renamed.group(0).split()))
+
+        if kind == "historical":
+            hist_rows, scen_rows = table.rows, []
+        elif table.last_historical:
+            hist_rows = [r for r in table.rows if parse_quarter(r[0]) <= table.last_historical]
+            scen_rows = table.rows[len(hist_rows):]
+            if len(scen_rows) != MAX_PUBLISHED_HORIZON_QUARTERS:
+                raise ValueError(
+                    f"{f.name}: {len(scen_rows)} quarters after the stated last historical quarter "
+                    f"{table.last_historical}, expected {MAX_PUBLISHED_HORIZON_QUARTERS}"
                 )
-            else:
-                hist_rows, scen_rows = [], table.rows
+        elif len(table.rows) > COMBINED_TABLE_ROW_THRESHOLD:
+            hist_rows, scen_rows = (
+                table.rows[:-MAX_PUBLISHED_HORIZON_QUARTERS],
+                table.rows[-MAX_PUBLISHED_HORIZON_QUARTERS:],
+            )
+        else:
+            hist_rows, scen_rows = [], table.rows
 
-            source = f"stress_test/{f.relative_to(vintage_dir.parent)}:{table.caption or scenario_name}"
-            for date_text, _, raw_values in hist_rows:
+        columns = [(label, *resolve_label(label, vintage)) for label in column_header(table, [t for _, t in vintage_tables])]
+        source = f"stress_test/{f.relative_to(vintage_dir.parent)}:{table.caption or scenario_name}"
+        parsed = {
+            parse_quarter(date_text): [to_number(raw) for raw in raw_values]
+            for date_text, _, raw_values in table.rows
+        }
+        if len(parsed) != len(table.rows):
+            raise ValueError(f"{f.name}: {table.caption!r} repeats a quarter")
+        for is_history, rows in ((True, hist_rows), (False, scen_rows)):
+            for date_text, _, raw_values in rows:
                 quarter = parse_quarter(date_text)
-                for label, raw in zip(table.header, raw_values, strict=True):
-                    value, decimals = to_number(raw)
+                if len(raw_values) != len(columns):
+                    raise ValueError(f"{f.name} {quarter}: {len(raw_values)} values for {len(columns)} columns")
+                for j, (label, variable_id, rule) in enumerate(columns):
+                    value, decimals = parsed[quarter][j]
                     if math.isnan(value):  # not published for this quarter
                         continue
-                    variable_id = variable_id_for(label)
-                    actual_obs.setdefault((variable_id, quarter), []).append(
-                        (value, decimals, source)
-                    )
-            for date_text, _, raw_values in scen_rows:
-                quarter = parse_quarter(date_text)
-                for label, raw in zip(table.header, raw_values, strict=True):
-                    value, decimals = to_number(raw)
-                    if math.isnan(value):
-                        continue
-                    variable_id = variable_id_for(label)
-                    scenario_obs.setdefault(
-                        (scenario_name, variable_id, quarter), []
-                    ).append((value, decimals, source))
+                    if rule is not None:
+                        if rule != ANNUALIZED_PCT_CHANGE:
+                            raise ValueError(f"unknown derivation rule {rule!r} for column {label!r}")
+                        prior = parsed.get(previous_quarter(quarter))
+                        if prior is None or math.isnan(prior[j][0]):
+                            if is_history:
+                                continue  # no prior level printed: growth is left unpublished, not filled
+                            raise ValueError(f"{f.name} {quarter}: no prior-quarter level to derive growth of {label!r}")
+                        bound = rounding_bound_pp(value, prior[j][0], decimals, prior[j][1])
+                        value, decimals = level_to_growth(value, prior[j][0]), DERIVED_DECIMALS
+                        entry = derived.setdefault(variable_id, {"variable_id": variable_id, "source_label": label, "rule": rule, "rounding_bound_pp": 0.0})
+                        entry["rounding_bound_pp"] = max(entry["rounding_bound_pp"], bound)
+                    if is_history:
+                        actual_obs.setdefault((variable_id, quarter), []).append((value, decimals, source))
+                    else:
+                        scenario_obs.setdefault((scenario_name, variable_id, quarter), []).append((value, decimals, source))
 
     actual_rows = []
     for (vid, q), obs in actual_obs.items():
@@ -478,6 +647,9 @@ def parse_vintage(vintage_dir: Path) -> tuple[list[dict], list[dict]]:
                 "quarter": q,
                 "value": value,
                 "source": source,
+                "published_name": next(iter(published_names.get(sn, {None}))),
             }
         )
-    return scenario_rows, actual_rows
+    if any(len(names) > 1 for names in published_names.values()):
+        raise ValueError(f"{vintage}: a scenario was published under more than one name: {published_names}")
+    return scenario_rows, actual_rows, list(derived.values())

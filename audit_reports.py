@@ -191,6 +191,9 @@ def audit_reports(con: duckdb.DuckDBPyConnection) -> tuple[list[str], list[str]]
         summary.append((vintage, len(tables), sum(kinds.values()), agree, disagree, absent, unparsed))
     lines += ["| vintage | tables | rows | cells agree | disagree | not in DB | unparsed lines |", "|---|---|---|---|---|---|---|"]
     lines += [f"| {v} | {nt} | {nr} | {a} | {d} | {ab} | {u} |" for v, nt, nr, a, d, ab, u in summary]
+    empty = [row[0] for row in summary if row[1] == 0]
+    if empty:
+        lines += ["", f"Vintages with 0 tables ({', '.join(empty)}): the report's tables are not in the 'Table N.' layout this audit reads; for these vintages the report PDF is itself the raw source and is audited cell by cell in cell_audit.md.", ""]
     lines += ["", "## Problems", ""] + ([f"- {p}" for p in problems] or ["- none"])
     return lines, problems
 
@@ -206,8 +209,20 @@ def audit_definitions(con: duckdb.DuckDBPyConnection) -> tuple[list[str], list[s
     lines = ["# Definition audit: the Fed's own wording for every variable and vintage", ""]
     explicit: dict[str, list[str]] = defaultdict(list)
     silent: list[tuple[str, str]] = []
+    derived = {
+        (r[0], r[1]): r[2]
+        for r in con.execute(
+            "SELECT vintage_id, variable_id, rule FROM derived_series"
+        ).fetchall()
+    }
     for vintage, var, measure, text in rows:
         low = text.lower()
+        if (vintage, var) in derived:
+            # The Fed publishes this series as a level in this vintage; the database stores the
+            # annualized percent change calculated from it (rule recorded in derived_series).
+            if measure != "growth" or "percent change" in low:
+                problems.append(f"{vintage} {var}: derived from a level but the definition or measure does not fit: {text[:120]}")
+            continue
         annualized = "percent change" in low and ("annualized" in low or "annual rate" in low)
         if measure == "level" and ("percent change" in low or "annualized" in low):
             problems.append(f"{vintage} {var}: classified level but the Fed's definition describes a change: {text[:120]}")
@@ -216,6 +231,7 @@ def audit_definitions(con: duckdb.DuckDBPyConnection) -> tuple[list[str], list[s
         elif measure == "growth":
             silent.append((vintage, var))
     lines += ["## Growth variables: annualized percent change", ""]
+    lines += [f"- {v} {var}: published as a level; stored as calculated growth ({rule})" for (v, var), rule in sorted(derived.items())]
     lines.append(f"- stated explicitly by the Fed: {sum(len(v) for v in explicit.values())} (vintage, variable) definitions")
     for vintage, var in silent:
         later = [v for v in explicit.get(var, []) if order.index(v) > order.index(vintage)]
