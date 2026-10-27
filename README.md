@@ -121,5 +121,4 @@ served from `/<repository>/`; the workflow sets `VITE_BASE_PATH` accordingly.
 
 Board of Governors of the Federal Reserve System, supervisory stress test scenarios (public reports
 linked in the Sources list of the site). The Methodology tab gives every formula, the known gaps
-and the data notes; `SCHEMA.md` documents the database and the export. The repository owner chooses
-the licence for the code; none is set here.
+and the data notes; `SCHEMA.md` documents the database and the export. 
