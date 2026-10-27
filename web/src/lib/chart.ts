@@ -5,13 +5,20 @@
 // strip on the calendar axis and a full tooltip) and `panel` (a grid cell: no labels, no strip).
 // Colour = publication year, pattern and weight = scenario family (see colors.ts).
 import { LineChart } from 'echarts/charts';
-import { DataZoomComponent, GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
+import {
+  DataZoomComponent,
+  GridComponent,
+  MarkLineComponent,
+  MarkPointComponent,
+  TooltipComponent
+} from 'echarts/components';
 import * as echarts from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption, SeriesOption } from 'echarts';
 import { BAND_COLOR, HISTORY_COLOR, familyStyle, vintageColor } from './colors';
 import { focusFor, type SeriesFocus } from './focus';
 import { formatQuarter, formatSigned, formatValue } from './format';
+import { bandExtremes } from './query';
 import type { Catalog, PlotModel, PlotSeries } from './types';
 
 echarts.use([
@@ -20,6 +27,7 @@ echarts.use([
   TooltipComponent,
   DataZoomComponent,
   MarkLineComponent,
+  MarkPointComponent,
   CanvasRenderer
 ]);
 
@@ -59,6 +67,7 @@ function describe(model: PlotModel, ctx: ChartContext, s: PlotSeries, pointIndex
     `<div class="tt-main"><b>${model.view === 'deviation' ? formatSigned(shown) : formatValue(shown)}</b> <span>${model.unit}</span></div>`
   );
   const extras: string[] = [];
+  if (s.kind === 'scenario' && s.publishedName) extras.push(`Published as: ${s.publishedName}`);
   if (s.kind !== 'scenario' && p.source)
     extras.push(
       s.kind === 'history'
@@ -85,6 +94,12 @@ function describe(model: PlotModel, ctx: ChartContext, s: PlotSeries, pointIndex
     !(model.view === 'deviation' && model.basis === 'level_gap')
   )
     extras.push(`Level gap: ${formatSigned(p.dev_level)}%`);
+  const band = model.envelopes[0];
+  const bandAt = s.kind === 'scenario' && band ? band.x.indexOf(s.x[pointIndex]!) : -1;
+  if (band && bandAt >= 0) {
+    const fmt = model.view === 'deviation' ? formatSigned : formatValue;
+    extras.push(`Band here: ${fmt(band.lo[bandAt]!)} to ${fmt(band.hi[bandAt]!)}`);
+  }
   if (extras.length) lines.push(`<div class="tt-extra">${extras.join('<br>')}</div>`);
   if (p.estimated)
     lines.push(`<div class="tt-flag">The Federal Reserve marks this value as an estimate.</div>`);
@@ -314,6 +329,32 @@ export function makeOption(
       data: guides
     }
   });
+
+  // Markers on the band's lowest and highest value (the large chart only; the readout under it names them).
+  const extremes = focus && model.band ? bandExtremes(model) : null;
+  if (extremes) {
+    const marker = (name: string, e: { x: number; value: number }, position: 'top' | 'bottom') => ({
+      name,
+      coord: [e.x, e.value],
+      label: { position }
+    });
+    options.push({
+      type: 'line',
+      name: 'band-markers',
+      data: [],
+      silent: true,
+      tooltip: { show: false },
+      markPoint: {
+        silent: true,
+        animation: false,
+        symbol: 'circle',
+        symbolSize: 11,
+        itemStyle: { color: '#ffffff', borderColor: '#1a1f2b', borderWidth: 2 },
+        label: { show: true, color: '#1a1f2b', fontSize: 11, fontWeight: 600, formatter: '{b}' },
+        data: [marker('min', extremes.min, 'bottom'), marker('max', extremes.max, 'top')]
+      }
+    });
+  }
 
   const zoomFrom = win ? win.from : xMin;
   const zoomTo = win ? win.to : xMax;

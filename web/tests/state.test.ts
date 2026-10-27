@@ -41,14 +41,22 @@ describe('share code', async () => {
         tab: rnd(2) ? 'methodology' : 'explorer',
         variable: catalog.state_order.variables[rnd(catalog.state_order.variables.length)]!,
         scenarios: subset(catalog.state_order.scenarios, 1, 4),
-        vintages: subset(catalog.state_order.vintages, 1, 15),
+        vintages: subset(
+          catalog.vintages.map((v) => v.id),
+          1,
+          catalog.vintages.length
+        ),
         view: (['published', 'level', 'deviation'] as const)[rnd(3)]!,
         basis: rnd(2) ? 'level_gap' : 'growth_gap',
         axis: rnd(2) ? 'calendar' : 'horizon',
         history: (['off', 'latest', 'realtime'] as const)[rnd(3)]!,
         range: rnd(2) ? 'full' : 'recent',
         band: rnd(2) === 1,
-        pins: subset(catalog.state_order.vintages, 0, 3)
+        pins: subset(
+          catalog.vintages.map((v) => v.id),
+          0,
+          3
+        )
       };
       const normalized = normalizeState(state);
       const code = encodeState(normalized, catalog);
@@ -146,3 +154,33 @@ describe('landing state and quick views', async () => {
 function code0(catalog: Parameters<typeof defaultState>[0]): string {
   return encodeState(defaultState(catalog), catalog)[0]!;
 }
+
+describe('links made before 2011 and 2012 were added', async () => {
+  const { catalog } = await realData();
+
+  it('an old share code (made on the 15-vintage catalog) opens to the same selections', () => {
+    const decoded = decodeState('CEBFDA8HDAAEWD', catalog);
+    expect(decoded.notices).toEqual([]);
+    expect(decoded.state).toEqual({
+      tab: 'explorer',
+      variable: 'unemployment_rate',
+      scenarios: ['baseline', 'severely_adverse'],
+      vintages: ['2020_sep', '2021', '2022', '2023', '2024', '2025', '2026'],
+      view: 'deviation',
+      basis: 'level_gap',
+      axis: 'horizon',
+      history: 'latest',
+      range: 'full',
+      band: true,
+      pins: ['2026']
+    });
+  });
+
+  it('the new years take the end of the committed order and round-trip', () => {
+    const order = catalog.state_order.vintages;
+    expect(order.slice(0, 15)[0]).toBe('2013');
+    expect(order.slice(15).sort()).toEqual(['2011', '2012']);
+    const state = { ...defaultState(catalog), vintages: ['2011', '2012', '2013'], pins: ['2011'] };
+    expect(decodeState(encodeState(state, catalog), catalog)).toEqual({ state, notices: [] });
+  });
+});

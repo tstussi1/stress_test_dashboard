@@ -5,6 +5,7 @@
 // quarters (calendar or quarters since the scenario started) and takes min/max across the user's
 // selection. History (the Fed's own Historical data) is drawn only for the as-published view on the
 // calendar axis; it has no deviation and no level path.
+import { formatQuarter, formatSigned, formatValue } from './format';
 import { qAdd, qNum, qStr } from './quarters';
 import type {
   BandSeries,
@@ -72,6 +73,74 @@ function yearsText(labels: string[]): string {
   if (labels.length === 0) return 'no publication selected';
   if (labels.length <= 3) return labels.join(', ');
   return `${labels.length} publications (${labels[0]}-${labels[labels.length - 1]})`;
+}
+
+/** A drawn scenario quarter that attains a band edge exactly. */
+export interface BandHit {
+  label: string;
+  quarter: string;
+  horizon: number;
+}
+
+export interface BandExtreme {
+  value: number;
+  /** x position on the chart axis (quarter number, or quarters since start) */
+  x: number;
+  hits: BandHit[];
+}
+
+type BandInput = Pick<PlotModel, 'envelopes' | 'series'>;
+
+/**
+ * Where the band reaches its lowest and highest value: the minimum of the lower edge and the maximum
+ * of the upper edge over the band's points (the earliest x on a tie). Edge values are copies of line
+ * values, so every extreme is attributed to the scenario quarters (not the jump-off anchors) that equal it
+ * exactly. Nothing is interpolated or recomputed.
+ */
+export function bandExtremes(model: BandInput): { min: BandExtreme; max: BandExtreme } | null {
+  const envelope = model.envelopes[0];
+  if (!envelope) return null;
+  const hitsAt = (x: number, value: number): BandHit[] =>
+    model.series.flatMap((s) => {
+      if (s.kind !== 'scenario') return [];
+      const i = s.x.indexOf(x);
+      const p = s.info[i];
+      return i >= 0 && p && p.horizon >= 1 && s.y[i] === value
+        ? [{ label: s.label, quarter: p.quarter, horizon: p.horizon }]
+        : [];
+    });
+  const best = (edge: number[], higher: boolean): BandExtreme | null => {
+    let found: BandExtreme | null = null;
+    edge.forEach((value, k) => {
+      if (found && (higher ? value <= found.value : value >= found.value)) return;
+      const hits = hitsAt(envelope.x[k]!, value);
+      if (hits.length > 0) found = { value, x: envelope.x[k]!, hits };
+    });
+    return found;
+  };
+  const min = best(envelope.lo, false);
+  const max = best(envelope.hi, true);
+  return min && max ? { min, max } : null;
+}
+
+const MAX_NAMED_HITS = 3;
+
+/** The two sentences shown under the chart and in the CSV header, from bandExtremes(). */
+export function bandReadout(
+  model: BandInput & Pick<PlotModel, 'axis' | 'view' | 'unit'>
+): { min: string; max: string } | null {
+  const extremes = bandExtremes(model);
+  if (!extremes) return null;
+  const sentence = (name: string, e: BandExtreme): string => {
+    const value = model.view === 'deviation' ? formatSigned(e.value) : formatValue(e.value);
+    const named = e.hits.slice(0, MAX_NAMED_HITS).map((h) => {
+      const where = `${formatQuarter(h.quarter)}${model.axis === 'horizon' ? ` (quarter ${h.horizon})` : ''}`;
+      return `${h.label}, ${where}`;
+    });
+    const more = e.hits.length > MAX_NAMED_HITS ? ` and ${e.hits.length - MAX_NAMED_HITS} more` : '';
+    return `${name} ${value} ${model.unit}: ${named.join('; ')}${more}.`;
+  };
+  return { min: sentence('Band minimum', extremes.min), max: sentence('Band maximum', extremes.max) };
 }
 
 export function buildPlotModel(state: ExplorerState, data: Data, variableId: string): PlotModel {
@@ -165,7 +234,8 @@ export function buildPlotModel(state: ExplorerState, data: Data, variableId: str
       info,
       firstProjected: anchorValue === null ? 0 : 1,
       origin: s.origin,
-      knownTo: null
+      knownTo: null,
+      publishedName: vintage.published_names[s.scenario] ?? null
     });
     if (s.band && state.view === 'published') {
       const offset = anchorValue === null ? 0 : 1;
@@ -190,6 +260,34 @@ export function buildPlotModel(state: ExplorerState, data: Data, variableId: str
       const s = data.seriesBy.get(`${variable.id}|${vintage.id}|${scenario.name}`);
       if (s) pushLine(s, `${vintage.label} ${scenario.label}`);
     }
+    if (state.view === 'deviation' && !vintage.has_baseline && shownScenarios.length > 0)
+      notes.push(
+        `${vintage.label}: no baseline was published in this year's report, so its deviation from baseline cannot be calculated (the line is not drawn).`
+      );
+  }
+  const drawnVintages = catalog.vintages.filter((v) => series.some((s) => s.vintage === v.id));
+  for (const vintage of drawnVintages) {
+    const bound = vintage.derived_rounding_bound_pp[variable.id];
+    if (bound !== undefined)
+      notes.push(
+        `${vintage.label} ${variable.name} is calculated from the published level (annualized percent change); other publications print it directly. Rounding of the published level can move it by up to ${bound.toFixed(2)} percentage points.`
+      );
+  }
+  const ccar = drawnVintages.filter((v) => v.exercise !== null);
+  if (ccar.length > 0) {
+    const renamed = [
+      ...new Set(series.flatMap((s) => (s.publishedName ? [`${s.scenario}|${s.publishedName}`] : [])))
+    ];
+    const exercise = [...new Set(ccar.map((v) => catalog.exercise_labels[v.exercise!] ?? v.exercise))].join(
+      '; '
+    );
+    const names = renamed.map((r) => {
+      const [scenario, published] = r.split('|');
+      return `'${published}' (shown as ${catalog.scenarios.find((x) => x.name === scenario)!.label})`;
+    });
+    notes.push(
+      `${ccar.map((v) => v.label).join(' and ')} ${ccar.length > 1 ? 'are' : 'is a'} ${exercise}.${names.length ? ` The Federal Reserve published the stress path as ${names.join(', ')}.` : ''}`
+    );
   }
   if (state.view === 'level' && variable.measure === 'level') {
     notes.push(`${variable.name} is already a level; it is shown as published.`);
@@ -268,6 +366,7 @@ export function buildPlotModel(state: ExplorerState, data: Data, variableId: str
         firstProjected: stretch.length,
         origin: 'actual',
         knownTo: end,
+        publishedName: null,
         info: stretch.map(infoOf)
       });
     }
@@ -301,6 +400,7 @@ export function buildPlotModel(state: ExplorerState, data: Data, variableId: str
         firstProjected: quarters.length,
         origin: 'fed',
         knownTo: null,
+        publishedName: null,
         info: quarters.map((q, i) => ({
           quarter: q,
           horizon: 0,
@@ -393,6 +493,9 @@ export function buildPlotModel(state: ExplorerState, data: Data, variableId: str
     : null;
   const axisText = horizonAxis ? 'quarters since the scenario starts' : 'calendar quarter';
   const transformLine = `Transform: ${VIEW_TRANSFORM[state.view]}${state.view === 'deviation' && variable.measure === 'growth' ? ` (gap measured as ${state.basis === 'level_gap' ? 'percent difference in cumulated level' : 'difference in growth rates, percentage points'})` : ''}`;
+  const readout = bandMode
+    ? bandReadout({ envelopes, series, axis: state.axis, view: state.view, unit })
+    : null;
   return {
     variable,
     unit,
@@ -407,6 +510,7 @@ export function buildPlotModel(state: ExplorerState, data: Data, variableId: str
     view: state.view,
     basis: state.basis,
     band: bandMode,
+    bandReadout: readout,
     bandReason,
     window,
     title: `${variable.name}: ${VIEW_TITLE[state.view]}`,
@@ -417,6 +521,7 @@ export function buildPlotModel(state: ExplorerState, data: Data, variableId: str
       `Unit: ${unit}`,
       transformLine,
       `Axis: ${axisText}; scenarios: ${shownScenarios.map((s) => s.label).join(', ') || 'none'}; publications: ${vintages.map((v) => v.label).join(', ')}; min-max band: ${bandMode ? 'on (at each point the lowest and highest of all lines drawn; rows envelope_min and envelope_max)' : 'off'}${showHistory ? `; history: ${state.history === 'latest' ? 'latest publication per quarter (vintage_id = publication the quarter came from)' : 'as published in each publication'}, up to the newest selected year's start, all those quarters whichever window is zoomed` : ''}`,
+      ...(readout ? [`${readout.min} ${readout.max}`] : []),
       `Source: Board of Governors of the Federal Reserve System, supervisory stress test scenarios. Values are as published unless the transform says calculated. Dashboard data built ${catalog.built_at} from database sha256 ${catalog.db_sha256.slice(0, 12)}`
     ]
   };

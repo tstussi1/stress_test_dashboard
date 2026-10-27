@@ -273,7 +273,20 @@ test('the complete dataset downloads with one row per stored number', async ({ p
     .trimEnd()
     .split('\r\n');
   const comments = lines.filter((l) => l.replace('\ufeff', '').startsWith('# ')).length;
-  expect(lines.length - comments - 1).toBe(14846 + 34397);
+  const dataDir = new URL('../public/data/', import.meta.url);
+  const stored =
+    (
+      JSON.parse(readFileSync(new URL('paths.json', dataDir), 'utf8')).series as {
+        scenario: string;
+        published: number[];
+      }[]
+    )
+      .filter((s) => s.scenario !== 'realized')
+      .reduce((n, s) => n + s.published.length, 0) +
+    (
+      JSON.parse(readFileSync(new URL('actuals.json', dataDir), 'utf8')).series as { values: number[] }[]
+    ).reduce((n, a) => n + a.values.length, 0);
+  expect(lines.length - comments - 1).toBe(stored);
 });
 
 test('PNG export downloads a figure', async ({ page }) => {
@@ -324,4 +337,34 @@ test('narrow screens collapse the controls above the figure', async ({ page }) =
   await expect(page.getByRole('combobox', { name: 'Search variables' })).toBeHidden();
   await page.getByRole('button', { name: /Controls/ }).click();
   await expect(page.getByRole('combobox', { name: 'Search variables' })).toBeVisible();
+});
+
+test('All years quick view draws every baseline-bearing year with the band, a readout naming minimum and maximum, and markers', async ({
+  page
+}) => {
+  const { problems } = await open(page);
+  await page.getByRole('button', { name: 'All years' }).click();
+  await expect(keyChips(page)).toHaveCount(16); // 2011 has no baseline, so it has no deviation line
+  const readout = page.getByTestId('band-readout');
+  await expect(readout).toContainText('Band minimum');
+  await expect(readout).toContainText('Band maximum');
+  await expect(readout).toContainText('percentage points');
+  await expect(readout).toContainText(/quarter \d+\)/);
+  await expect(page.locator('.note', { hasText: '2011: no baseline was published' })).toBeVisible();
+  await page.getByRole('switch', { name: 'Min-max band' }).click();
+  await expect(readout).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
+test('the 2011 and 2012 CCAR years carry a tag, a note and the Fed’s original scenario name', async ({
+  page
+}) => {
+  await open(page);
+  const chips = page.getByRole('group', { name: 'Years', exact: true });
+  await expect(chips.getByRole('button', { name: '2011 CCAR' })).toBeVisible();
+  await expect(chips.getByRole('button', { name: '2012 CCAR' })).toBeVisible();
+  await expect(chips.getByRole('button', { name: '2013', exact: true })).toBeVisible();
+  await chips.getByRole('button', { name: '2012 CCAR' }).click();
+  await expect(page.locator('.note', { hasText: /Comprehensive Capital Analysis and Review/ })).toBeVisible();
+  await expect(page.locator('.note', { hasText: "'Supervisory Stress Scenario'" })).toBeVisible();
 });

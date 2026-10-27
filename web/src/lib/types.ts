@@ -38,6 +38,15 @@ export interface CatalogVintage {
   scenarios: string[];
   estimate_statement: EstimateStatement | null;
   estimate_statement_note: string | null;
+  /** 'CCAR' for the 2011-2012 exercises (before the first DFAST), else null */
+  exercise: string | null;
+  /** false when the publication has no baseline scenario, so no deviation exists */
+  has_baseline: boolean;
+  /** the Federal Reserve's own scenario title where it differs from the standard name */
+  published_names: Record<string, string>;
+  /** variables whose stored growth rate is calculated from a published level, with the rounding bound (pp) */
+  derived_variable_ids: string[];
+  derived_rounding_bound_pp: Record<string, number>;
 }
 
 export interface CatalogScenario {
@@ -87,6 +96,7 @@ export interface Catalog {
   state_version: number;
   built_at: string;
   db_sha256: string;
+  exercise_labels: Record<string, string>;
   variables: CatalogVariable[];
   vintages: CatalogVintage[];
   scenarios: CatalogScenario[];
@@ -195,6 +205,8 @@ export interface PlotSeries {
   origin: string;
   /** last quarter number a latest-report history stretch covers (the jump-off that ends it); null otherwise */
   knownTo: number | null;
+  /** the Federal Reserve's own scenario title where it differs from the standard name (scenario lines only) */
+  publishedName: string | null;
 }
 
 export interface Envelope {
@@ -242,6 +254,8 @@ export interface PlotModel {
   basis: Basis;
   /** the min-max band is drawn */
   band: boolean;
+  /** the band's lowest and highest value and where each occurs (two sentences), or null when no band is drawn */
+  bandReadout: { min: string; max: string } | null;
   /** why a band cannot be drawn for the current lines, or null */
   bandReason: string | null;
   /** visible calendar window (quarter numbers) and the full span of the data, for the calendar axis */

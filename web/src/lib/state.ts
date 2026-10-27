@@ -164,13 +164,17 @@ export function decodeState(code: string, catalog: Catalog): Decoded {
     const d = defaultState(catalog);
     const variable = order.variables[variableIdx];
     const scenarios = pick(scenarioIdx, order.scenarios, 'scenario');
-    const vintages = pick(vintageIdx, order.vintages, 'vintage');
+    // The code indexes the append-only order; the page works in chronological (display) order.
+    const chronological = catalog.vintages.map((v) => v.id);
+    const byTime = (ids: string[]): string[] =>
+      [...ids].sort((x, y) => chronological.indexOf(x) - chronological.indexOf(y));
+    const vintages = byTime(pick(vintageIdx, order.vintages, 'vintage'));
     const choice = <T>(list: T[], index: number, fallbackValue: T): T => list[index] ?? fallbackValue;
     const state = normalizeState({
       variable: variable ?? d.variable,
       scenarios: scenarios.length ? scenarios : d.scenarios,
       vintages: vintages.length ? vintages : d.vintages,
-      pins: pick(pinIdx, order.vintages, 'pinned vintage'),
+      pins: byTime(pick(pinIdx, order.vintages, 'pinned vintage')),
       view: choice(VIEWS, flags & 3, d.view),
       basis: BASES[(flags >> 2) & 1]!,
       axis: AXES[(flags >> 3) & 1]!,

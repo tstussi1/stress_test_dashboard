@@ -4,7 +4,7 @@ See the [repository README](../README.md) for the live link, how to use the dash
 
 Static dashboard (Vite + Svelte 5 + TypeScript + ECharts, all bundled, no CDN) over three JSON
 files exported from the DuckDB database of the Federal Reserve's supervisory stress-test
-scenarios, 2013-2026. See `../SCHEMA.md` (export contract) and the Methodology tab for every
+scenarios, 2011-2026. See `../SCHEMA.md` (export contract) and the Methodology tab for every
 formula and gap.
 
 ## Run, test, build
@@ -34,7 +34,7 @@ vintage or variable is appended to `state_order.json`, so old share links keep w
 ## Layout of `src/`
 
 `lib/` pure logic (`query.ts` builds the plotted model that the chart, the Data panel, the Summary
-and the CSV all read; `focus.ts` decides which lines and which stretches of history are bright; `state.ts` share code and quick views; `chart.ts` the only ECharts file;
+and the CSV all read, and `bandExtremes` names the band's minimum and maximum; `guide.ts` is the text of the usage guide; `focus.ts` decides which lines and which stretches of history are bright; `state.ts` share code and quick views; `chart.ts` the only ECharts file;
 `colors.ts` colour = year, pattern = scenario family; `export.ts` CSV, complete dataset, PNG),
 `components/` Svelte components, `styles/` tokens and base CSS. Tests: `tests/` (vitest), `e2e/`
 (Playwright, including hand-checked Fed values).

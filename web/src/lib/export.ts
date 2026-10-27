@@ -75,7 +75,8 @@ const DATASET_COLUMNS = [
   'level_index_calculated',
   'gap_to_baseline_calculated',
   'level_gap_percent_calculated',
-  'fed_estimate'
+  'fed_estimate',
+  'calculated'
 ] as const;
 
 /**
@@ -87,6 +88,7 @@ export function completeDatasetCsv(data: Data): string {
   const { catalog } = data;
   const name = new Map(catalog.variables.map((v) => [v.id, v.name]));
   const table: (string | number | boolean)[][] = [];
+  const derived = new Map(catalog.vintages.map((v) => [v.id, new Set(v.derived_variable_ids)]));
   const num = (v: number | null | undefined): string | number => (v === null || v === undefined ? '' : v);
   for (const s of data.series) {
     if (s.scenario === 'realized') continue; // a derived view of the history rows below, not a separate publication
@@ -104,7 +106,8 @@ export function completeDatasetCsv(data: Data): string {
         num(s.level?.[i]),
         num(s.dev?.[i]),
         num(s.dev_level?.[i]),
-        estimated
+        estimated,
+        derived.get(s.vintage)?.has(s.variable) ?? false
       ]);
     });
   }
@@ -122,7 +125,8 @@ export function completeDatasetCsv(data: Data): string {
         '',
         '',
         '',
-        a.estimated.includes(i)
+        a.estimated.includes(i),
+        derived.get(a.vintage)?.has(a.variable) ?? false
       ])
     );
   const header = [
@@ -130,6 +134,7 @@ export function completeDatasetCsv(data: Data): string {
     'Board of Governors of the Federal Reserve System, supervisory stress test scenarios; one row per stored number.',
     "record_type scenario = a projected quarter of a scenario (horizon = quarter since the scenario starts); history = a quarter of that publication's own Historical data (real-time data).",
     "published = the Federal Reserve's number, unrounded. The three *_calculated columns are calculated: level index (growth variables only; 100 = quarter before the scenario starts), gap to the same publication's baseline, and percent gap in level.",
+    "calculated = true where the stored published value is itself calculated from a level the Federal Reserve printed (2011 real GDP, CPI and real disposable income growth: annualized percent change of consecutive levels); false where the value is the Fed's own number.",
     `Dashboard data built ${catalog.built_at} from database sha256 ${catalog.db_sha256}`
   ].map((line) => `# ${line}`);
   const lines = [...header, DATASET_COLUMNS.join(','), ...table.map((r) => r.map(quote).join(','))];

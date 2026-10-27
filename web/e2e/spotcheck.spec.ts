@@ -15,6 +15,7 @@ type Case = {
   scenarioId: string;
   vintage: string;
   vintageId: string;
+  chip?: string; // the year chip's accessible name when it differs from the label (CCAR years carry a tag)
   quarter: string; // as in the Fed files, e.g. '2027Q3'
   expected: number;
   tolerance: number; // 0 = exact
@@ -177,6 +178,77 @@ const cases: Case[] = [
     quarter: '2016Q4',
     expected: 3.2,
     tolerance: 0
+  },
+  {
+    name: '2012 CCAR stress unemployment rate peaks at 13.05 in 2013Q2',
+    source: '2012/instructions.pdf, Appendix III "Supervisory Stress Scenario", row Q2 2013',
+    variable: 'Unemployment rate',
+    view: 'As published',
+    scenario: 'Severely adverse',
+    scenarioId: 'severely_adverse',
+    vintage: '2012',
+    chip: '2012 CCAR',
+    vintageId: '2012',
+    quarter: '2013Q2',
+    expected: 13.05,
+    tolerance: 0
+  },
+  {
+    name: '2012 CCAR baseline unemployment rate, 2011Q4 (9.10)',
+    source: '2012/instructions.pdf, Appendix III "Supervisory Baseline Scenario", row Q4 2011',
+    variable: 'Unemployment rate',
+    view: 'As published',
+    scenario: 'Baseline',
+    scenarioId: 'baseline',
+    vintage: '2012',
+    chip: '2012 CCAR',
+    vintageId: '2012',
+    quarter: '2011Q4',
+    expected: 9.1,
+    tolerance: 0
+  },
+  {
+    name: '2011 CCAR stress unemployment rate, 2011Q4 (11.0, equal to the Fed Table 1)',
+    source: '2011/ccar_overview.pdf, Appendix "Supervisory Stress Scenario", row Q4 2011',
+    variable: 'Unemployment rate',
+    view: 'As published',
+    scenario: 'Severely adverse',
+    scenarioId: 'severely_adverse',
+    vintage: '2011',
+    chip: '2011 CCAR',
+    vintageId: '2011',
+    quarter: '2011Q4',
+    expected: 11.0,
+    tolerance: 0
+  },
+  {
+    name: '2011 CCAR stress unemployment rate peaks at 11.1 in 2012Q1',
+    source: '2011/ccar_overview.pdf, Appendix "Supervisory Stress Scenario", row Q1 2012',
+    variable: 'Unemployment rate',
+    view: 'As published',
+    scenario: 'Severely adverse',
+    scenarioId: 'severely_adverse',
+    vintage: '2011',
+    chip: '2011 CCAR',
+    vintageId: '2011',
+    quarter: '2012Q1',
+    expected: 11.1,
+    tolerance: 0
+  },
+  {
+    name: '2011 CCAR real GDP growth 2010Q4, calculated from the printed levels ((13,332 / 13,261)^4 - 1) x 100 = 2.159',
+    source:
+      'calculated from 2011/ccar_overview.pdf, Appendix, rows Q3 2010 and Q4 2010 (Real GDP 13,261 and 13,332)',
+    variable: 'Real GDP growth',
+    view: 'As published',
+    scenario: 'Severely adverse',
+    scenarioId: 'severely_adverse',
+    vintage: '2011',
+    chip: '2011 CCAR',
+    vintageId: '2011',
+    quarter: '2010Q4',
+    expected: 2.159,
+    tolerance: 0.0005
   }
 ];
 
@@ -191,7 +263,7 @@ async function openWith(page: Page, c: Case): Promise<void> {
   const chip = (name: string) =>
     page.getByRole('group', { name: 'Years', exact: true }).getByRole('button', { name, exact: true });
   if (c.vintage !== '2026') {
-    await chip(c.vintage).click();
+    await chip(c.chip ?? c.vintage).click();
     await chip('2026').click();
   }
   const scenario = page.getByRole('button', { name: new RegExp(`^${c.scenario}`) });

@@ -1,6 +1,6 @@
 # Stress Test Scenario Explorer
 
-An interactive explorer of the Federal Reserve's supervisory stress-test scenarios, 2013-2026:
+An interactive explorer of the Federal Reserve's supervisory stress-test scenarios, 2011-2026 (the 2011 and 2012 CCAR scenarios and every DFAST scenario since):
 compare years, scenarios and variables as published, as deviation from the baseline, or as a
 cumulated level path, together with the history each report ships. Every number marked "as
 published" is the Federal Reserve's own; everything else is calculated by a documented formula
@@ -15,21 +15,20 @@ repository's **Actions** tab.
 
 ## Using the dashboard
 
-- **Variable**: pick one in the Variable box, or click any panel in the grid below the large chart.
-  Domestic and International variables are separate grids.
-- **Years**: choose publications with the presets, the year buttons or the slider. 2020 has two
-  publications (Feb and Sep). Each year keeps one colour everywhere.
-- **Scenarios**: baseline, adverse, severely adverse and the Fed's alternative scenarios; the line
-  pattern tells the scenario, the colour tells the year.
-- **View**: *As published* (the Fed's numbers), *Level path* (growth rates compounded into an index),
-  *Deviation from baseline* (scenario minus the same year's baseline).
-- **Time axis**: *Calendar* or *Quarters since start* (lines aligned at the quarter each scenario starts).
-- **History**: the history the Fed published, shown in the As published view on the calendar axis. It
-  stops at the newest selected year's start; history that only newer years knew is drawn lighter.
-- **Min-max band**: shades the lowest to the highest value among all lines drawn, behind the lines.
-- **Hover, pin, Esc**: hover a line to isolate a year, click to pin it, Esc clears pins.
-- **Data, Summary, PNG, Copy link**: download exactly the plotted numbers as CSV (or the complete
-  dataset), list each line's peak and trough, save a picture, share the view.
+The page explains itself: the "How to use this dashboard" guide at the top of the Explorer tab opens
+on a first visit and stays one click away ("How to use" in the page header). In short:
+
+- Pick a **variable**, the **years** (publications; colour = year) and the **scenarios** (line
+  pattern = scenario).
+- Choose a **view**: *As published* (the Fed's numbers), *Level path* or *Deviation from baseline*
+  (both calculated), on a *Calendar* or *Quarters since start* axis.
+- Switch on the **Min-max band** to shade the lowest to the highest line; the page names the band's
+  minimum and maximum and where each occurs.
+- Hover a line to isolate its year, click to pin it, Esc clears pins; **History** shows what each
+  report said about the past.
+- **Data**, **Summary**, **PNG** and **Copy link** take the numbers, the peaks and troughs, a picture or
+  the view with you.
+- 2011 and 2012 are CCAR exercises (tagged); see the Methodology tab for how they differ.
 
 ## Run it locally
 
@@ -85,9 +84,9 @@ tests/                    Python tests (pytest)
 requirements.txt          pinned Python dependencies;  pytest.ini  pytest settings
 ```
 
-Not in the repository, by design: the DuckDB database (`*.duckdb`) and the raw downloads (`data/`),
-which are rebuilt from the public Fed files (below), and local tool configuration (`.devin/`).
-The site itself only needs the committed JSON in `web/public/data/`.
+Not in the repository, by design: the DuckDB database (`*.duckdb`) and the raw downloads (`data/`,
+including the Fed's PDFs and spreadsheets for every year), which are rebuilt from the public Fed
+files (below). The site itself only needs the committed JSON in `web/public/data/`.
 
 ## Refresh the data
 
@@ -95,10 +94,17 @@ Needs a recent Python 3 (the database was built with Python 3.14).
 
 ```
 python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
-python3 fetch_sources.py && python3 build_database.py && python3 audit_database.py
+python3 fetch_sources.py && python3 build_database.py
+python3 audit_database.py && python3 audit_reports.py
 python3 export_web_data.py        # rewrites web/public/data/*.json from the database
 python3 -m pytest && ruff check .
 ```
+
+The database is written to `stress_test_scenarios.duckdb` and the downloads to `data/raw/` (both
+ignored by git; `data/raw/stress_test/<year>/` holds the Fed's data files, `data/raw/stress_test_reports/`
+its scenario reports). The 2011 and 2012 scenarios exist only as tables inside Fed PDFs; they are fetched
+and read like every other source, and the audits re-read them with a second PDF library. Meeting
+notes and other personal files live in `notes/`, which is ignored too.
 
 Every file location is defined once in `paths.py`; override with the `STRESS_TEST_*` environment
 variables it lists. To add a new publication, add it to `fetch_sources.py`'s manifest and rerun the

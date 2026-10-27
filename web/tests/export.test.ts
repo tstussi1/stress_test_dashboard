@@ -114,14 +114,36 @@ describe('CSV download', () => {
 });
 
 describe('complete dataset download', () => {
-  it('has one row per stored number: 14,846 scenario rows and 34,397 history rows, with the published numbers untouched', async () => {
+  it('has one row per stored number (scenario rows = every published quarter of every scenario series, history rows = every history quarter), with the published numbers untouched', async () => {
     const data = await realData();
     const { comments, rows } = parseCsv(completeDatasetCsv(data).slice(1));
     expect(comments.join('\n')).toContain(data.catalog.db_sha256);
     const [header, ...body] = rows;
     expect(header![0]).toBe('record_type');
-    expect(body.filter((r) => r[0] === 'scenario')).toHaveLength(14846);
-    expect(body.filter((r) => r[0] === 'history')).toHaveLength(34397);
+    const stored = data.series
+      .filter((s) => s.scenario !== 'realized')
+      .reduce((n, s) => n + s.published.length, 0);
+    expect(body.filter((r) => r[0] === 'scenario')).toHaveLength(stored);
+    expect(body.filter((r) => r[0] === 'history')).toHaveLength(
+      data.actuals.reduce((n, a) => n + a.values.length, 0)
+    );
+    expect(header![header!.length - 1]).toBe('calculated');
+    const calculatedRows = body.filter((r) => r[header!.length - 1] === 'true');
+    const derivedCount = data.catalog.vintages.reduce(
+      (n, v) =>
+        n +
+        v.derived_variable_ids.reduce(
+          (m, id) =>
+            m +
+            data.series
+              .filter((s) => s.vintage === v.id && s.variable === id && s.scenario !== 'realized')
+              .reduce((k, s) => k + s.published.length, 0),
+          0
+        ),
+      0
+    );
+    expect(calculatedRows).toHaveLength(derivedCount);
+    expect(derivedCount).toBeGreaterThan(0);
     const sample = data.series.find(
       (s) => s.variable === 'unemployment_rate' && s.vintage === '2026' && s.scenario === 'severely_adverse'
     )!;

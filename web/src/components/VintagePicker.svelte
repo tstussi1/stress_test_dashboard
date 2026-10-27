@@ -2,7 +2,8 @@
   import { vintageColor } from '../lib/colors';
   import { explorer } from '../lib/store.svelte';
 
-  const vintages = $derived(explorer.data!.catalog.vintages);
+  const catalog = $derived(explorer.data!.catalog);
+  const vintages = $derived(catalog.vintages);
   const selected = $derived(explorer.s.vintages);
   const n = $derived(vintages.length);
   const indexes = $derived(vintages.map((v, i) => (selected.includes(v.id) ? i : -1)).filter((i) => i >= 0));
@@ -117,9 +118,13 @@
         class="chip"
         class:on={selected.includes(v.id)}
         aria-pressed={selected.includes(v.id)}
-        title={`${v.label}: ${v.scenarios.length} scenario${v.scenarios.length === 1 ? '' : 's'} published`}
+        title={v.exercise
+          ? `${catalog.exercise_labels[v.exercise]}: ${v.scenarios.length} scenario${v.scenarios.length === 1 ? '' : 's'}, ${v.n_variables} variables`
+          : `${v.label}: ${v.scenarios.length} scenario${v.scenarios.length === 1 ? '' : 's'} published`}
         onclick={() => toggle(v.id)}
-        ><span class="swatch" style:background={vintageColor(i, n)}></span>{v.label}</button
+        ><span class="swatch" style:background={vintageColor(i, n)}></span>{v.label}{#if v.exercise}<span
+            class="tag">{v.exercise}</span
+          >{/if}</button
       >
     {/each}
   </div>
@@ -234,5 +239,15 @@
   }
   .chip.on .swatch {
     opacity: 1;
+  }
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    padding: 0 3px;
+    line-height: 1.3;
   }
 </style>

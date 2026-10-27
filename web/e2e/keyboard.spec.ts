@@ -91,8 +91,9 @@ test('the year range handles move with the arrow keys', async ({ page }) => {
   await first.focus();
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowRight');
-  await expect(yearChip(page, '2013')).toHaveAttribute('aria-pressed', 'false');
-  await expect(yearChip(page, '2015')).toHaveAttribute('aria-pressed', 'true');
+  await expect(yearChip(page, '2011 CCAR')).toHaveAttribute('aria-pressed', 'false');
+  await expect(yearChip(page, '2012 CCAR')).toHaveAttribute('aria-pressed', 'false');
+  await expect(yearChip(page, '2013')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('pin a year from the key, open and close the Data panel, all by keyboard', async ({ page }) => {

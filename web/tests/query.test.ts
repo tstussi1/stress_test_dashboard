@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildPlotModel, fieldFor, unitFor } from '../src/lib/query';
+import { GUIDE } from '../src/lib/guide';
+import { bandExtremes, buildPlotModel, fieldFor, unitFor } from '../src/lib/query';
 import { qNum, qStr } from '../src/lib/quarters';
 import { stateWith } from './helpers';
 
@@ -16,7 +17,9 @@ describe('query layer on the real exported data', () => {
       axis: 'horizon'
     });
     const m = buildPlotModel(state, data, 'unemployment_rate');
-    expect(m.series).toHaveLength(15);
+    const withBaseline = data.catalog.vintages.filter((v) => v.has_baseline);
+    expect(m.series).toHaveLength(withBaseline.length);
+    expect(withBaseline.length).toBeLessThan(data.catalog.vintages.length); // a vintage without a baseline is not drawn
     expect(m.series.every((s) => s.scenario === 'severely_adverse')).toBe(true);
     const s2026 = m.series.find((s) => s.vintage === '2026')!;
     expect(s2026.x.slice(0, 3)).toEqual([0, 1, 2]);
@@ -325,5 +328,131 @@ describe('query layer on the real exported data', () => {
     expect(unitFor({ view: 'deviation', basis: 'growth_gap' }, house, data.catalog.labels)).toBe(
       'index points'
     );
+  });
+});
+
+describe('pre-2013 (CCAR) publications', () => {
+  it('a publication without a baseline is not drawn in the deviation view and the note says why', async () => {
+    const { data, state } = await stateWith({
+      variable: 'unemployment_rate',
+      vintages: ['2011', '2012'],
+      scenarios: ['severely_adverse'],
+      view: 'deviation',
+      axis: 'horizon'
+    });
+    const m = buildPlotModel(state, data, 'unemployment_rate');
+    expect(m.series.map((s) => s.vintage)).toEqual(['2012']);
+    expect(m.notes.join(' ')).toMatch(/2011: no baseline was published/);
+    const withLevel = buildPlotModel(
+      { ...state, view: 'published', axis: 'calendar' },
+      data,
+      'unemployment_rate'
+    );
+    expect(withLevel.series.filter((s) => s.kind === 'scenario').map((s) => s.vintage)).toEqual([
+      '2011',
+      '2012'
+    ]);
+  });
+
+  it('2011 real GDP growth is calculated from published levels and says so; the 2012 value is the Fed’s own', async () => {
+    const { data, state } = await stateWith({
+      variable: 'real_gdp_growth',
+      vintages: ['2011', '2012'],
+      scenarios: ['severely_adverse'],
+      view: 'published',
+      axis: 'horizon'
+    });
+    const m = buildPlotModel(state, data, 'real_gdp_growth');
+    const s2011 = m.series.find((s) => s.vintage === '2011')!;
+    expect(s2011.info[0]!.quarter).toBe('2010Q4');
+    expect(s2011.y[0]).toBeCloseTo(((13332 / 13261) ** 4 - 1) * 100, 6);
+    expect(m.notes.filter((n) => /calculated from the published level/.test(n))).toHaveLength(1);
+    expect(m.notes.join(' ')).toMatch(
+      /2011 Real GDP growth is calculated[^.]*\.[^.]*up to 0\.03 percentage points/
+    );
+    expect(m.series.find((s) => s.vintage === '2012')!.y[2]).toBe(-7.98); // 2012 stress, 2011Q4..: published as printed
+  });
+
+  it('the CCAR note names the exercise and the Fed’s original scenario name, only when a CCAR year is drawn', async () => {
+    const both = await stateWith({
+      vintages: ['2012', '2013'],
+      scenarios: ['severely_adverse'],
+      view: 'published'
+    });
+    const m = buildPlotModel(both.state, both.data, 'unemployment_rate');
+    expect(m.notes.join(' ')).toMatch(/2012 is a Comprehensive Capital Analysis and Review/);
+    expect(m.notes.join(' ')).toMatch(
+      /published the stress path as 'Supervisory Stress Scenario' \(shown as Severely adverse\)/
+    );
+    expect(m.series.find((s) => s.vintage === '2012')!.publishedName).toBe('Supervisory Stress Scenario');
+    expect(m.series.find((s) => s.vintage === '2013')!.publishedName).toBeNull();
+    const modern = await stateWith({ vintages: ['2025', '2026'], scenarios: ['severely_adverse'] });
+    expect(buildPlotModel(modern.state, modern.data, 'unemployment_rate').notes.join(' ')).not.toMatch(
+      /Comprehensive/
+    );
+  });
+});
+
+describe('band minimum and maximum', () => {
+  const horizonState = {
+    variable: 'unemployment_rate',
+    scenarios: ['baseline', 'severely_adverse'],
+    view: 'deviation' as const,
+    axis: 'horizon' as const,
+    band: true
+  };
+
+  it('names the exact values of the band edges, the line and the quarter that attain them', async () => {
+    const { data, state } = await stateWith({ ...horizonState, vintages: ['2020_sep', '2021', '2026'] });
+    const m = buildPlotModel(state, data, 'unemployment_rate');
+    const extremes = bandExtremes(m)!;
+    const env = m.envelopes[0]!;
+    expect(extremes.max.value).toBe(Math.max(...env.hi));
+    expect(extremes.min.value).toBe(
+      Math.min(
+        ...env.lo.filter((_, i) =>
+          m.series.some((s) => s.x.includes(env.x[i]!) && s.info[s.x.indexOf(env.x[i]!)]!.horizon >= 1)
+        )
+      )
+    );
+    for (const e of [extremes.min, extremes.max]) {
+      expect(e.hits.length).toBeGreaterThan(0);
+      for (const hit of e.hits) {
+        const line = m.series.find((s) => s.label === hit.label)!;
+        expect(line.y[line.x.indexOf(e.x)]).toBe(e.value);
+        expect(hit.horizon).toBe(e.x); // quarters-since-start axis: x is the horizon
+      }
+    }
+    expect(m.bandReadout!.max).toMatch(/^Band maximum \+?[\d.]+ percentage points: .*quarter \d+\)/);
+    expect(m.csvHeader.join('\n')).toContain(m.bandReadout!.min);
+  });
+
+  it('on the calendar axis the quarter of each attaining line is its own calendar quarter, ties are all named', async () => {
+    const { data, state } = await stateWith({
+      ...horizonState,
+      axis: 'calendar',
+      view: 'published',
+      variable: 'real_gdp_growth',
+      vintages: ['2025', '2026'],
+      scenarios: ['severely_adverse']
+    });
+    const m = buildPlotModel(state, data, 'real_gdp_growth');
+    const extremes = bandExtremes(m)!;
+    expect(extremes.max.hits.every((h) => qNum(h.quarter) === extremes.max.x)).toBe(true);
+    expect(m.bandReadout!.min).not.toMatch(/quarter \d/);
+  });
+
+  it('there is no readout without a band', async () => {
+    const { data, state } = await stateWith({ ...horizonState, band: false, vintages: ['2025', '2026'] });
+    expect(buildPlotModel(state, data, 'unemployment_rate').bandReadout).toBeNull();
+  });
+});
+
+describe('guide text', () => {
+  it('has no empty entries and unique texts', () => {
+    const texts = GUIDE.flatMap((section) => section.items.map((i) => i.text));
+    expect(GUIDE.every((s) => s.title.trim() !== '' && s.items.length > 0)).toBe(true);
+    expect(texts.every((t) => t.trim().length > 10)).toBe(true);
+    expect(new Set(texts).size).toBe(texts.length);
   });
 });

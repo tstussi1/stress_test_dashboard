@@ -4,12 +4,18 @@
   import MethodologyTab from './components/MethodologyTab.svelte';
   import Notices from './components/Notices.svelte';
   import SourcesBlock from './components/SourcesBlock.svelte';
+  import UsageGuide from './components/UsageGuide.svelte';
   import Toolbar from './components/Toolbar.svelte';
   import VariableGrid from './components/VariableGrid.svelte';
   import { explorer } from './lib/store.svelte';
 
   onMount(() => {
     void explorer.init();
+  });
+
+  const yearSpan = $derived.by(() => {
+    const years = explorer.data?.catalog.vintages.map((v) => v.cycle_year) ?? [];
+    return years.length ? `${Math.min(...years)}–${Math.max(...years)}` : '';
   });
 
   const tabs = [
@@ -55,9 +61,21 @@
     <div class="inner">
       <div>
         <h1>Stress Test Scenario Explorer</h1>
-        <p>Federal Reserve supervisory scenarios, 2013–2026</p>
+        <p>Federal Reserve supervisory scenarios, {yearSpan}</p>
       </div>
       <div class="actions">
+        <button
+          type="button"
+          class="text-button"
+          aria-expanded={explorer.guideOpen && explorer.s.tab === 'explorer'}
+          aria-controls="guide-body"
+          onclick={() => {
+            explorer.setGuide(true);
+            requestAnimationFrame(() =>
+              document.getElementById('usage-guide')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            );
+          }}>How to use</button
+        >
         <button type="button" class="text-button" onclick={() => explorer.copyLink()}
           >{explorer.copied ? 'Link copied' : 'Copy link'}</button
         >
@@ -99,6 +117,7 @@
             />
           </p>
         {/if}
+        <UsageGuide />
         <Toolbar />
         <FocusFigure />
         <VariableGrid />

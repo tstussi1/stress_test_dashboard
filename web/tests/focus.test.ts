@@ -66,15 +66,16 @@ describe('focus rule: one rule for default, pins and hover', () => {
     expect(opacities(focusFor(model, catalog, ['2013'], null), ids)).toEqual([1, share(0.5), 1, 1]);
   });
 
-  it('with fifteen years the history fades smoothly from full to one year of fifteen', async () => {
+  it('with every year selected the history fades smoothly from full to one year of N', async () => {
     const all = (await stateWith({})).data.catalog.vintages.map((v) => v.id);
     const { data, state } = await stateWith({ ...view, vintages: all, history: 'latest' });
     const model = buildPlotModel(state, data, 'unemployment_rate');
     const stretches = model.series.filter((s) => s.kind === 'history');
     const o = stretches.map((s) => focusFor(model, data.catalog, [], null).get(s.id)!.opacity);
-    expect(stretches).toHaveLength(15);
+    const n = all.length;
+    expect(stretches).toHaveLength(n);
     expect(o[0]).toBe(1);
-    expect(o[14]).toBeCloseTo(share(1 / 15), 10);
+    expect(o[n - 1]).toBeCloseTo(share(1 / n), 10);
     expect(o.every((v, i) => i === 0 || v < o[i - 1]!)).toBe(true);
   });
 

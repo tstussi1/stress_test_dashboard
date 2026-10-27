@@ -12,6 +12,7 @@ import {
   shareHash
 } from './state';
 import type { ChartHandle } from './chart';
+import { GUIDE_STORAGE_KEY } from './guide';
 import type { Data, ExplorerState } from './types';
 
 class Explorer {
@@ -22,6 +23,7 @@ class Explorer {
   copied = $state(false);
   linkToCopy = $state.raw<string | null>(null);
   hovered = $state.raw<string | null>(null);
+  guideOpen = $state(true); // "How to use this dashboard": open on a first visit, collapsed afterwards
   renderAllPanels = $state(false); // set while exporting, so panels below the fold are drawn too
   charts = new Map<string, ChartHandle>(); // variable id -> live chart (focus chart and grid panels), for PNG export
 
@@ -29,11 +31,30 @@ class Explorer {
     try {
       const data = await loadData(browserReader(import.meta.env.BASE_URL));
       this.data = data;
+      this.initGuide();
       this.applyHash();
     } catch (e) {
       this.error =
         e instanceof DataError ? e.message : `The dashboard could not start: ${(e as Error).message}`;
     }
+  }
+
+  /** First visit: the guide opens and the browser remembers it was shown; later visits start collapsed.
+   * The only try/catch is for the browser API: when storage is blocked the guide simply stays open. */
+  initGuide(): void {
+    try {
+      const seen = window.localStorage.getItem(GUIDE_STORAGE_KEY) !== null;
+      this.guideOpen = !seen;
+      if (!seen) window.localStorage.setItem(GUIDE_STORAGE_KEY, 'seen');
+    } catch {
+      this.guideOpen = true;
+    }
+  }
+
+  /** Open or close the guide; opening also shows the Explorer tab where it lives. */
+  setGuide(open: boolean): void {
+    this.guideOpen = open;
+    if (open && this.s.tab !== 'explorer') this.set({ tab: 'explorer' });
   }
 
   /** Restore the state from a `#c=` share code in the address bar (also when a new link is pasted into an open tab). */

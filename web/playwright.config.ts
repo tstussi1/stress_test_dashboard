@@ -13,6 +13,17 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: `http://localhost:${port}`,
+    // The usage guide opens on a first visit; the suites start as a returning visitor. The guide
+    // test overrides this with an empty storage state.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: `http://localhost:${port}`,
+          localStorage: [{ name: 'stress-test-guide-v1', value: 'seen' }]
+        }
+      ]
+    },
     viewport: { width: 1440, height: 1000 },
     acceptDownloads: true
   },

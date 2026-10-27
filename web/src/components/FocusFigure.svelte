@@ -107,7 +107,7 @@
           <span
             class="swatch"
             style:background={vintageColor(catalog.vintages.indexOf(v), catalog.vintages.length)}
-          ></span>{v.label}
+          ></span>{v.label}{#if v.exercise}<span class="tag">{v.exercise}</span>{/if}
         </button>
       {/each}
     </div>
@@ -127,6 +127,12 @@
     {#if panel === 'data'}<DataPanel {model} onclose={close} />{/if}
     {#if panel === 'summary'}<SummaryPanel {model} onclose={close} />{/if}
   </div>
+
+  {#if model.bandReadout}
+    <p class="band-readout" data-testid="band-readout">
+      <span>{model.bandReadout.min}</span><span>{model.bandReadout.max}</span>
+    </p>
+  {/if}
 
   {#if keyVintages.length}
     <p class="hint">
@@ -230,6 +236,16 @@
     height: 10px;
     border-radius: 50%;
   }
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    padding: 0 3px;
+    line-height: 1.3;
+  }
   .pinrow {
     margin-top: 6px;
     min-height: 0;
@@ -261,6 +277,17 @@
     text-align: center;
     color: var(--muted);
     background: rgba(255, 255, 255, 0.85);
+  }
+  .band-readout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 24px;
+    margin: 8px 0 0;
+    padding: 6px 10px;
+    border-left: 3px solid #8a94a3;
+    background: #f2f4f7;
+    font-size: 13px;
+    color: var(--ink);
   }
   .hint {
     margin: 4px 0 0;
